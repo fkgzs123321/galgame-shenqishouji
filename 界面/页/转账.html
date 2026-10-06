@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>转账</title>
+<link rel="stylesheet" href="https://testingcf.jsdelivr.net/gh/fkgzs123321/galgame-shenqishouji@main/界面/_共用/base.css">
+</head>
+<body style="--hue:145">
+<div class="dsh-card">
+  <div class="dsh-hd">
+    <div class="dsh-hd-ico">¥</div>
+    <div class="dsh-hd-t" id="t">转账</div>
+    <div class="dsh-hd-sub" id="n">—</div>
+  </div>
+  <div class="dsh-bd p0" id="l"></div>
+</div>
+<script>
+
+const M = getChatMessages(getCurrentMessageId())[0];
+const 原文 = M ? (M.message || '') : '';
+
+// ★★★ 属性解析 —— 只用字符串操作
+//   ★ 为什么：Python→文件→浏览器 三层转义会把正则里的 \s 弄坏
+//   ★★ 用 indexOf/slice 之后没有任何转义问题
+const 拆属性 = (串) => {
+  const 出 = {};
+  let i = 0;
+  while (i < 串.length) {
+    const 等 = 串.indexOf('=', i);
+    if (等 < 0) break;
+    const 键 = 串.slice(i, 等).trim().split(' ').pop().replace(/["']/g, '');
+    let 起 = 等 + 1;
+    while (起 < 串.length && 串[起] === ' ') 起++;
+    let 值 = '';
+    if (串[起] === '"' || 串[起] === "'") {
+      const 引 = 串[起];
+      const 闭 = 串.indexOf(引, 起 + 1);
+      值 = 串.slice(起 + 1, 闭 < 0 ? 串.length : 闭);
+      i = (闭 < 0 ? 串.length : 闭) + 1;
+    } else {
+      const 空 = 串.indexOf(' ', 起);
+      值 = 串.slice(起, 空 < 0 ? 串.length : 空);
+      i = 空 < 0 ? 串.length : 空 + 1;
+    }
+    if (键) 出[键] = 值;
+  }
+  return 出;
+};
+
+const 属性 = (名) => {
+  const i = 原文.indexOf('<' + 名);
+  if (i < 0) return '';
+  const j = 原文.indexOf('>', i);
+  if (j < 0) return '';
+  return 原文.slice(i + 名.length + 1, j).trim();
+};
+
+// ★ 取属性的【值】，不是整串
+const 取值 = (名, key) => {
+  const 串 = 属性(名);
+  if (!串) return '';
+  if (key) return 拆属性(串)[key] || '';
+  const 全 = 拆属性(串);
+  const 键 = Object.keys(全);
+  return 键.length ? 全[键[0]] : 串;
+};
+
+// ★ 取标签内的正文
+const 取文 = (名) => {
+  const i = 原文.indexOf('<' + 名);
+  if (i < 0) return '';
+  const a = 原文.indexOf('>', i);
+  const b = 原文.indexOf('</' + 名 + '>', a);
+  return 原文.slice(a + 1, b < 0 ? 原文.length : b).trim();
+};
+
+const 转义 = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+document.getElementById('t').textContent = 取值('转账') || '转账';
+
+// ★ 大金额居中显示 —— 转账是"一件事"，不是列表
+const raw = 取文('转账');
+const l = document.getElementById('l');
+const 行s = raw.split('\n').map((x) => x.trim()).filter(Boolean);
+for (const s of 行s) {
+  if (/^[—\-]{3,}$/.test(s)) { const hr = document.createElement('hr'); hr.className = 'dsh-hr'; l.appendChild(hr); continue; }
+  const m = s.match(/(¥|￥|\$)\s*([\d,]+(?:\.\d+)?)/);
+  const 方向 = /收|到账|入账|\(\+\)|＋|\+/.test(s) ? 'up' : (/转|付|出|支|\(-\)|－|-/.test(s) ? 'down' : '');
+  if (m) {
+    const d = document.createElement('div');
+    d.style.cssText = 'text-align:center;padding:14px 15px';
+    d.innerHTML = `
+      <div style="color:var(--t-3);font-size:11.5px;margin-bottom:4px">${转义(s.replace(m[0],'').replace(/[｜|·:：]\s*$/,'').trim() || '转账')}</div>
+      <div class="dsh-num ${方向 === 'up' ? 'up' : 方向 === 'down' ? 'down' : 'money'}"
+        style="font-size:26px;letter-spacing:-.02em">${方向 === 'up' ? '+' : 方向 === 'down' ? '−' : ''}${转义(m[0])}</div>`;
+    l.appendChild(d);
+  } else {
+    const d = document.createElement('div');
+    d.className = 'dsh-mono';
+    d.style.cssText = 'padding:5px 15px;text-align:center';
+    d.textContent = s;
+    l.appendChild(d);
+  }
+}
+if (!行s.length && raw) l.innerHTML = `<div style="padding:14px;color:var(--t-3);white-space:pre-wrap">${转义(raw)}</div>`;
+document.getElementById('n').textContent = '';
+
+</script>
+</body>
+</html>

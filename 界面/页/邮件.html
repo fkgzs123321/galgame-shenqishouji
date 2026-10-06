@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>邮件</title>
+<link rel="stylesheet" href="https://testingcf.jsdelivr.net/gh/fkgzs123321/galgame-shenqishouji@main/界面/_共用/base.css">
+</head>
+<body style="--hue:190">
+<div class="dsh-card">
+  <div class="dsh-hd">
+    <div class="dsh-hd-ico">✉</div>
+    <div class="dsh-hd-t" id="t">邮件</div>
+    <div class="dsh-hd-sub" id="n">—</div>
+  </div>
+  <div class="dsh-bd p0" id="l"></div>
+</div>
+<script>
+
+const M = getChatMessages(getCurrentMessageId())[0];
+const 原文 = M ? (M.message || '') : '';
+
+// ★★★ 属性解析 —— 只用字符串操作
+//   ★ 为什么：Python→文件→浏览器 三层转义会把正则里的 \s 弄坏
+//   ★★ 用 indexOf/slice 之后没有任何转义问题
+const 拆属性 = (串) => {
+  const 出 = {};
+  let i = 0;
+  while (i < 串.length) {
+    const 等 = 串.indexOf('=', i);
+    if (等 < 0) break;
+    const 键 = 串.slice(i, 等).trim().split(' ').pop().replace(/["']/g, '');
+    let 起 = 等 + 1;
+    while (起 < 串.length && 串[起] === ' ') 起++;
+    let 值 = '';
+    if (串[起] === '"' || 串[起] === "'") {
+      const 引 = 串[起];
+      const 闭 = 串.indexOf(引, 起 + 1);
+      值 = 串.slice(起 + 1, 闭 < 0 ? 串.length : 闭);
+      i = (闭 < 0 ? 串.length : 闭) + 1;
+    } else {
+      const 空 = 串.indexOf(' ', 起);
+      值 = 串.slice(起, 空 < 0 ? 串.length : 空);
+      i = 空 < 0 ? 串.length : 空 + 1;
+    }
+    if (键) 出[键] = 值;
+  }
+  return 出;
+};
+
+const 属性 = (名) => {
+  const i = 原文.indexOf('<' + 名);
+  if (i < 0) return '';
+  const j = 原文.indexOf('>', i);
+  if (j < 0) return '';
+  return 原文.slice(i + 名.length + 1, j).trim();
+};
+
+// ★ 取属性的【值】，不是整串
+const 取值 = (名, key) => {
+  const 串 = 属性(名);
+  if (!串) return '';
+  if (key) return 拆属性(串)[key] || '';
+  const 全 = 拆属性(串);
+  const 键 = Object.keys(全);
+  return 键.length ? 全[键[0]] : 串;
+};
+
+// ★ 取标签内的正文
+const 取文 = (名) => {
+  const i = 原文.indexOf('<' + 名);
+  if (i < 0) return '';
+  const a = 原文.indexOf('>', i);
+  const b = 原文.indexOf('</' + 名 + '>', a);
+  return 原文.slice(a + 1, b < 0 ? 原文.length : b).trim();
+};
+
+const 转义 = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+document.getElementById('t').textContent = 取值('邮件') || '邮件';
+
+// ★ 格式：
+//   发件人 · 主题 · 时间
+//   正文
+//   ————
+const raw = 取文('邮件');
+const l = document.getElementById('l');
+const 块 = raw.split(/—{3,}/).map((x) => x.trim()).filter(Boolean);
+for (const b of 块) {
+  const 行 = b.split('\n').map((x) => x.trim()).filter(Boolean);
+  if (!行.length) continue;
+  const 段 = 行[0].split(/[·｜|]/).map((x) => x.trim());
+  const 发 = 段[0] || '';
+  const 题 = 段[1] || '';
+  const 时 = 段[2] || '';
+  const 未读 = /未读|●/.test(行[0]);
+  const 文 = 行.slice(1).join(' ');
+  const d = document.createElement('div');
+  d.style.cssText = 'padding:10px 15px;border-bottom:1px solid var(--line)';
+  d.innerHTML = `
+    <div style="display:flex;gap:8px;align-items:baseline">
+      ${未读 ? '<span style="color:var(--c-info);font-size:9px">●</span>' : ''}
+      <span style="color:var(--t-${未读 ? '1' : '3'});font-size:12.5px;font-weight:${未读 ? '600' : '400'}">${转义(发)}</span>
+      <span style="flex:1;color:var(--t-2);font-size:12.5px">${转义(题)}</span>
+      <span class="dsh-mono">${转义(时)}</span>
+    </div>
+    ${文 ? `<div style="margin-top:5px;padding-left:14px;color:var(--t-3);font-size:12px;line-height:1.72;border-left:2px solid var(--line)">${转义(文)}</div>` : ''}`;
+  l.appendChild(d);
+}
+if (!块.length && raw) l.innerHTML = `<div style="padding:14px;color:var(--t-3);white-space:pre-wrap">${转义(raw)}</div>`;
+document.getElementById('n').textContent = 块.length ? 块.length + ' 封' : '';
+
+</script>
+</body>
+</html>
