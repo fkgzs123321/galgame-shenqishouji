@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>数值</title>
+<link rel="stylesheet" href="https://testingcf.jsdelivr.net/gh/fkgzs123321/galgame-shenqishouji@main/界面/_共用/base.css">
+</head>
+<body style="--hue:265">
+<div class="dsh-card" id="box">
+  <div class="dsh-hd">
+    <div class="dsh-hd-ico">📊</div>
+    <div class="dsh-hd-t">数值变化</div>
+    <div class="dsh-hd-sub" id="t">—</div>
+  </div>
+  <div class="dsh-bd p0" id="list"></div>
+</div>
+<script>
+
+const M = getChatMessages(getCurrentMessageId())[0];
+const 原文 = M ? (M.message || '') : '';
+const 取 = (名) => {
+  const re = new RegExp('<' + 名 + '(?:\\s[^>]*)?>([\\s\\S]*?)</' + 名 + '>');
+  const m = 原文.match(re);
+  return m ? m[1].trim() : '';
+};
+const 属性 = (名) => {
+  const re = new RegExp('<' + 名 + '\\s+([^>]*)>');
+  const m = 原文.match(re);
+  return m ? m[1].trim() : '';
+};
+const 转义 = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+const raw = 取('数值');
+const list = document.getElementById('list');
+const 行 = raw.split('\n').map(x => x.trim()).filter(Boolean);
+let n = 0;
+for (const 一 of 行) {
+  // 形式：● 兴奋 45 → 58 ▲13   或   ● 现金 20000 → 19970 ▼30（打车）
+  const m = 一.match(/^[●•*]?\s*([^0-9\-+▲▼]+?)\s*([\d.,]+)\s*(?:→|->)\s*([\d.,]+)\s*([▲▼+\-])\s*([\d.,]+)\s*(.*)$/);
+  if (!m) {
+    // 纯文字行 → 当说明
+    if (一.length > 1) {
+      const d = document.createElement('div');
+      d.className = 'dsh-key';
+      d.textContent = 一.replace(/^[●•*]\s*/, '');
+      list.appendChild(d);
+    }
+    continue;
+  }
+  const [, 名, 旧, 新, 号, 差, 注] = m;
+  const 上 = (号 === '▲' || 号 === '+');
+  const 色 = /现金|钱|¥/.test(名) ? 'money' : /经验|阅历/.test(名) ? 'exp' : '';
+  const d = document.createElement('div');
+  d.className = 'dsh-delta';
+  d.innerHTML = `<span class="dsh-delta-k">${转义(名.trim())}</span>
+    <span class="dsh-delta-v">${转义(旧)} → ${转义(新)}</span>
+    <span class="dsh-delta-a ${上 ? 'up' : 'down'}">${上 ? '▲' : '▼'}${转义(差)}</span>` +
+    (注 ? `<span class="dsh-mono" style="margin-left:6px">${转义(注)}</span>` : '');
+  list.appendChild(d);
+  n++;
+}
+document.getElementById('t').textContent = n + ' 项';
+if (!list.children.length) document.getElementById('box').style.display = 'none';
+
+</script>
+</body>
+</html>

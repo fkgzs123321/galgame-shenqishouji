@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>线程</title>
+<link rel="stylesheet" href="https://testingcf.jsdelivr.net/gh/fkgzs123321/galgame-shenqishouji@main/界面/_共用/base.css">
+</head>
+<body style="--hue:205">
+<div class="dsh-card" style="--hue:205">
+  <div class="dsh-hd">
+    <div class="dsh-hd-ico">📬</div>
+    <div class="dsh-hd-t">同时进行中</div>
+    <div class="dsh-hd-sub" id="t">—</div>
+  </div>
+  <div class="dsh-bd p0" id="l"></div>
+</div>
+<script>
+
+const M = getChatMessages(getCurrentMessageId())[0];
+const 原文 = M ? (M.message || '') : '';
+const 取 = (名) => {
+  const re = new RegExp('<' + 名 + '(?:\\s[^>]*)?>([\\s\\S]*?)</' + 名 + '>');
+  const m = 原文.match(re);
+  return m ? m[1].trim() : '';
+};
+const 属性 = (名) => {
+  const re = new RegExp('<' + 名 + '\\s+([^>]*)>');
+  const m = 原文.match(re);
+  return m ? m[1].trim() : '';
+};
+const 转义 = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+const raw = 取('线程');
+const l = document.getElementById('l');
+const 行 = raw.split('\n').map(x => x.trim()).filter(Boolean);
+let n = 0;
+for (const 一 of 行) {
+  // 形式：🔴 Yuki 刚刚 [未读 1]   /   🟡 Pim 2小时前
+  const m = 一.match(/^([🔴🟡⚪🟢🟠]?)\s*(\S+)\s+(.+?)(\s*\[.+\])?$/);
+  if (!m) continue;
+  const [, 灯, 名, 时间, 标] = m;
+  const 色 = 灯 === '🔴' ? 'var(--c-hot)' : 灯 === '🟡' ? 'var(--c-warn)' : 'var(--t-4)';
+  const d = document.createElement('div');
+  d.style.cssText = 'display:flex;align-items:center;gap:9px;padding:9px 15px;border-bottom:1px solid var(--line);';
+  d.innerHTML = `
+    <span style="width:7px;height:7px;border-radius:50%;background:${色};box-shadow:0 0 9px ${色};flex:0 0 auto"></span>
+    <span style="flex:1;color:var(--t-2);font-size:13px">${转义(名)}</span>
+    <span class="dsh-mono">${转义(时间)}</span>
+    ${标 ? `<span class="dsh-tag hot">${转义(标.replace(/[\[\]]/g,''))}</span>` : ''}`;
+  l.appendChild(d);
+  n++;
+}
+document.getElementById('t').textContent = n + ' 条';
+if (!n) document.getElementById('l').innerHTML = '<div style="padding:12px 15px" class="dsh-mono">没有正在进行的线</div>';
+
+</script>
+</body>
+</html>

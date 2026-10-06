@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>手机</title>
+<link rel="stylesheet" href="https://testingcf.jsdelivr.net/gh/fkgzs123321/galgame-shenqishouji@main/界面/_共用/base.css">
+</head>
+<body style="--hue:265">
+<div class="dsh-card" style="--hue:265;max-width:440px;margin:14px auto">
+  <div style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:linear-gradient(180deg,#15121f,#0d0b14);border-bottom:1px solid #241f36">
+    <span style="font-size:11px;color:var(--c-time);font-family:'JetBrains Mono',monospace" id="clock">--:--</span>
+    <span style="flex:1;text-align:center;font-size:11.5px;color:var(--t-3);letter-spacing:.1em">神奇手机</span>
+    <span style="font-size:11px;color:var(--c-good)">●●●</span>
+    <span style="font-size:11px;color:var(--t-4)" id="bat">87%</span>
+  </div>
+  <div class="dsh-bd" style="padding:15px 16px;font-family:'Noto Sans SC',sans-serif" id="c"></div>
+</div>
+<script>
+
+const M = getChatMessages(getCurrentMessageId())[0];
+const 原文 = M ? (M.message || '') : '';
+const 取 = (名) => {
+  const re = new RegExp('<' + 名 + '(?:\\s[^>]*)?>([\\s\\S]*?)</' + 名 + '>');
+  const m = 原文.match(re);
+  return m ? m[1].trim() : '';
+};
+const 属性 = (名) => {
+  const re = new RegExp('<' + 名 + '\\s+([^>]*)>');
+  const m = 原文.match(re);
+  return m ? m[1].trim() : '';
+};
+const 转义 = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+const now = new Date();
+document.getElementById('clock').textContent =
+  String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+
+const raw = 取('phone');
+const c = document.getElementById('c');
+// ★ 手机里的内容按行处理，保留结构，但把「搜索/消息/已加入」这类标记美化
+const 行 = raw.split('\n');
+for (const 一 of 行) {
+  if (!一.trim()) { c.appendChild(document.createElement('div')).style.height = '7px'; continue; }
+  const d = document.createElement('div');
+  let s = 转义(一);
+
+  if (/^[🔍📌⚙️🔔👤📁]/.test(一.trim())) {
+    // 分类标题
+    d.style.cssText = 'margin:11px 0 6px;font-size:12px;color:var(--c-info);letter-spacing:.05em;font-weight:500';
+    d.innerHTML = s;
+  } else if (/^【.*】/.test(一.trim())) {
+    // 条目
+    d.className = 'dsh-key';
+    d.style.margin = '5px 0';
+    d.innerHTML = s;
+  } else if (/已加入|✔|成功|通过/.test(一)) {
+    d.className = 'dsh-tag good';
+    d.style.margin = '7px 0';
+    d.innerHTML = s;
+  } else if (/⚠|需|无法|禁止|拒绝/.test(一)) {
+    d.className = 'dsh-tag warn';
+    d.style.margin = '7px 0';
+    d.innerHTML = s;
+  } else {
+    d.style.cssText = 'margin:3px 0;color:var(--t-2);line-height:1.8';
+    d.innerHTML = s;
+  }
+  c.appendChild(d);
+}
+
+</script>
+</body>
+</html>

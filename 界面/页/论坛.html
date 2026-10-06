@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>论坛</title>
+<link rel="stylesheet" href="https://testingcf.jsdelivr.net/gh/fkgzs123321/galgame-shenqishouji@main/界面/_共用/base.css">
+</head>
+<body style="--hue:15">
+<div class="dsh-card" style="--hue:15">
+  <div class="dsh-hd">
+    <div class="dsh-hd-ico">🌊</div>
+    <div class="dsh-hd-t" id="t">论坛</div>
+    <div class="dsh-hd-sub" id="n">—</div>
+  </div>
+  <div class="dsh-bd p0" id="l"></div>
+</div>
+<script>
+
+const M = getChatMessages(getCurrentMessageId())[0];
+const 原文 = M ? (M.message || '') : '';
+const 取 = (名) => {
+  const re = new RegExp('<' + 名 + '(?:\\s[^>]*)?>([\\s\\S]*?)</' + 名 + '>');
+  const m = 原文.match(re);
+  return m ? m[1].trim() : '';
+};
+const 属性 = (名) => {
+  const re = new RegExp('<' + 名 + '\\s+([^>]*)>');
+  const m = 原文.match(re);
+  return m ? m[1].trim() : '';
+};
+const 转义 = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+document.getElementById('t').textContent = 属性('论坛') || '论坛';
+const raw = 取('论坛');
+const l = document.getElementById('l');
+// 形如：【1】标题\n楼主 · 3小时前 · 127回复\n————
+const 块 = raw.split(/—{2,}/).map(x => x.trim()).filter(Boolean);
+let i = 0;
+for (const b of 块) {
+  const 行s = b.split('\n').map(x => x.trim()).filter(Boolean);
+  if (!行s.length) continue;
+  const 题 = 行s[0].replace(/^【\d+】/, '').replace(/^【|】$/g, '');
+  const 编 = (行s[0].match(/^【(\d+)】/) || [])[1] || (++i);
+  const 元 = 行s.slice(1).join(' ');
+  const d = document.createElement('div');
+  d.style.cssText = 'padding:11px 15px;border-bottom:1px solid var(--line);cursor:default;transition:background .15s';
+  d.onmouseenter = () => d.style.background = 'var(--glass-2)';
+  d.onmouseleave = () => d.style.background = '';
+  // ★ 加精 / 置顶 高亮
+  const 精 = /加精|置顶|精华/.test(元);
+  const 热 = /(\d{3,})\s*回复/.test(元);
+  d.innerHTML = `
+    <div style="display:flex;gap:9px;align-items:baseline">
+      <span class="dsh-mono" style="color:var(--t-4);min-width:22px">${编}</span>
+      <span style="flex:1;color:var(--t-1);font-size:13.5px;font-family:'Noto Serif SC',serif">${转义(题)}</span>
+      ${精 ? '<span class="dsh-tag warn">精</span>' : ''}
+      ${热 ? '<span class="dsh-tag hot">热</span>' : ''}
+    </div>
+    ${元 ? `<div class="dsh-mono" style="margin:5px 0 0 31px">${转义(元)}</div>` : ''}`;
+  l.appendChild(d);
+}
+document.getElementById('n').textContent = 块.length + ' 帖';
+
+</script>
+</body>
+</html>

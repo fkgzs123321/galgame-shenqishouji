@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>现实</title>
+<link rel="stylesheet" href="https://testingcf.jsdelivr.net/gh/fkgzs123321/galgame-shenqishouji@main/界面/_共用/base.css">
+</head>
+<body style="--hue:35">
+<div class="dsh-card" style="--hue:35">
+  <div class="dsh-hd">
+    <div class="dsh-hd-ico">🌆</div>
+    <div class="dsh-hd-t">现实</div>
+    <div class="dsh-hd-sub" id="s"></div>
+  </div>
+  <div class="dsh-bd" id="b"></div>
+</div>
+<script>
+
+const M = getChatMessages(getCurrentMessageId())[0];
+const 原文 = M ? (M.message || '') : '';
+const 取 = (名) => {
+  const re = new RegExp('<' + 名 + '(?:\\s[^>]*)?>([\\s\\S]*?)</' + 名 + '>');
+  const m = 原文.match(re);
+  return m ? m[1].trim() : '';
+};
+const 属性 = (名) => {
+  const re = new RegExp('<' + 名 + '\\s+([^>]*)>');
+  const m = 原文.match(re);
+  return m ? m[1].trim() : '';
+};
+const 转义 = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+const raw = 取('现实');
+const b = document.getElementById('b');
+for (const 一 of raw.split('\n')) {
+  const s = 一.trim();
+  if (!s) continue;
+  const d = document.createElement('div');
+  const m = s.match(/^([^：:]{2,10})[：:]\s*(.*)$/);
+  if (m) {
+    // 地点 / 时间 这种字段行
+    d.style.cssText = 'display:flex;gap:9px;margin:5px 0;font-size:13px';
+    d.innerHTML = `<span class="dsh-mono" style="flex:0 0 auto;min-width:44px;color:var(--c-warn)">${转义(m[1])}</span>
+                   <span style="flex:1;color:var(--t-2)">${转义(m[2])}</span>`;
+  } else if (/^[「『"“]/.test(s)) {
+    d.className = 'dsh-quote';
+  } else {
+    d.style.cssText = 'margin:9px 0;color:var(--t-2);line-height:1.95';
+    d.textContent = s;
+  }
+  b.appendChild(d);
+}
+
+</script>
+</body>
+</html>

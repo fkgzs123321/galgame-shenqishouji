@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>照片</title>
+<link rel="stylesheet" href="https://testingcf.jsdelivr.net/gh/fkgzs123321/galgame-shenqishouji@main/界面/_共用/base.css">
+</head>
+<body style="--hue:340">
+<div class="dsh-card" style="--hue:340">
+  <div class="dsh-hd">
+    <div class="dsh-hd-ico">📷</div>
+    <div class="dsh-hd-t">她发来一张照片</div>
+    <div class="dsh-hd-sub" id="t">刚刚</div>
+  </div>
+  <div class="dsh-bd p0">
+    <div style="position:relative;padding:17px 16px;background:linear-gradient(160deg,#1a1219,#120e15);min-height:90px">
+      <div style="position:absolute;inset:0;background:radial-gradient(circle at 28% 22%,rgba(255,77,109,.09),transparent 62%)"></div>
+      <div id="c" style="position:relative;color:#e6dce4;font-size:13.5px;line-height:2;font-family:'Noto Serif SC',serif"></div>
+    </div>
+    <div style="padding:9px 15px;border-top:1px solid #2a1f28;display:flex;gap:7px;align-items:center">
+      <span class="dsh-tag" style="background:rgba(255,77,109,.1);border-color:rgba(255,77,109,.3);color:var(--c-hot-2)">未见过真人</span>
+      <span class="dsh-mono" style="flex:1">可能经过美化 · 手机可验证</span>
+    </div>
+  </div>
+</div>
+<script>
+
+const M = getChatMessages(getCurrentMessageId())[0];
+const 原文 = M ? (M.message || '') : '';
+const 取 = (名) => {
+  const re = new RegExp('<' + 名 + '(?:\\s[^>]*)?>([\\s\\S]*?)</' + 名 + '>');
+  const m = 原文.match(re);
+  return m ? m[1].trim() : '';
+};
+const 属性 = (名) => {
+  const re = new RegExp('<' + 名 + '\\s+([^>]*)>');
+  const m = 原文.match(re);
+  return m ? m[1].trim() : '';
+};
+const 转义 = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+const raw = 取('照片');
+const c = document.getElementById('c');
+for (const 一 of raw.split('\n')) {
+  const s = 一.trim();
+  if (!s) { c.insertAdjacentHTML('beforeend', '<div style="height:6px"></div>'); continue; }
+  const d = document.createElement('div');
+  // ★ 「脸不在画面里」「内裤勒进去了」这类关键点要突出
+  if (/脸不在|没露脸|看不到脸|勒|湿|水痕|肿|硬/.test(s)) {
+    d.innerHTML = `<span style="color:#ffb3c1;border-bottom:1px dashed rgba(255,77,109,.5)">${转义(s)}</span>`;
+  } else if (/^★/.test(s)) {
+    d.style.cssText = 'color:var(--c-warn);font-family:\'Noto Sans SC\';font-size:12.5px';
+    d.textContent = s;
+  } else {
+    d.textContent = s;
+  }
+  c.appendChild(d);
+}
+
+</script>
+</body>
+</html>

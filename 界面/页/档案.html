@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>档案</title>
+<link rel="stylesheet" href="https://testingcf.jsdelivr.net/gh/fkgzs123321/galgame-shenqishouji@main/界面/_共用/base.css">
+</head>
+<body style="--hue:200">
+<div class="dsh-card" style="--hue:200">
+  <div class="dsh-hd">
+    <div class="dsh-hd-ico">👤</div>
+    <div class="dsh-hd-t" id="t">档案</div>
+    <div class="dsh-hd-sub" id="s"></div>
+  </div>
+  <div class="dsh-bd" id="b"></div>
+</div>
+<script>
+
+const M = getChatMessages(getCurrentMessageId())[0];
+const 原文 = M ? (M.message || '') : '';
+const 取 = (名) => {
+  const re = new RegExp('<' + 名 + '(?:\\s[^>]*)?>([\\s\\S]*?)</' + 名 + '>');
+  const m = 原文.match(re);
+  return m ? m[1].trim() : '';
+};
+const 属性 = (名) => {
+  const re = new RegExp('<' + 名 + '\\s+([^>]*)>');
+  const m = 原文.match(re);
+  return m ? m[1].trim() : '';
+};
+const 转义 = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+const raw = 取('档案');
+const 行s = raw.split('\n').map(x => x.trim()).filter(Boolean);
+const b = document.getElementById('b');
+if (行s.length) document.getElementById('t').textContent = 行s[0].replace(/^👤\s*/, '');
+let 关系 = null;
+for (const 一 of 行s.slice(1)) {
+  if (/^—{2,}$/.test(一)) { b.insertAdjacentHTML('beforeend', '<hr class="dsh-hr">'); continue; }
+  const rm = 一.match(/关系进度\s*[█░]+\s*([\d.]+)\s*\/\s*(\d+)/);
+  if (rm) { 关系 = [Number(rm[1]), Number(rm[2])]; continue; }
+  const d = document.createElement('div');
+  d.style.cssText = 'display:flex;gap:9px;align-items:baseline;margin:6px 0;font-size:13px';
+  const 好 = /^✅/.test(一), 锁 = /^🔒/.test(一);
+  d.innerHTML = `<span style="flex:0 0 auto;font-size:12px">${好 ? '✅' : 锁 ? '🔒' : '·'}</span>
+                 <span style="flex:1;color:${锁 ? 'var(--t-4)' : 'var(--t-2)'}">${转义(一.replace(/^[✅🔒·]\s*/, ''))}</span>`;
+  b.appendChild(d);
+}
+if (关系) {
+  const p = Math.round(关系[0] / 关系[1] * 100);
+  const d = document.createElement('div');
+  d.style.marginTop = '12px';
+  d.innerHTML = `<div style="display:flex;justify-content:space-between;margin-bottom:5px">
+      <span class="dsh-mono">关系进度</span>
+      <span class="dsh-num exp">${关系[0]} / ${关系[1]}</span></div>
+    <div class="dsh-bar"><i style="width:${p}%"></i></div>`;
+  b.appendChild(d);
+  document.getElementById('s').textContent = p + '%';
+}
+
+</script>
+</body>
+</html>

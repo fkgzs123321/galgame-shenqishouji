@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>直播</title>
+<link rel="stylesheet" href="https://testingcf.jsdelivr.net/gh/fkgzs123321/galgame-shenqishouji@main/界面/_共用/base.css">
+</head>
+<body style="--hue:330">
+<div class="dsh-card" style="--hue:330">
+  <div class="dsh-hd">
+    <div class="dsh-hd-ico">🔴</div>
+    <div class="dsh-hd-t" id="t">直播</div>
+    <div style="display:flex;align-items:center;gap:5px">
+      <span style="width:6px;height:6px;border-radius:50%;background:var(--c-hot);box-shadow:0 0 8px var(--c-hot)" class="dsh-live"></span>
+      <span class="dsh-mono" style="color:var(--c-hot)">LIVE</span>
+    </div>
+  </div>
+  <div class="dsh-bd p0">
+    <div id="画面" style="padding:14px 15px;border-bottom:1px solid var(--line)"></div>
+    <div id="弹幕" style="padding:11px 15px;max-height:230px;overflow-y:auto"></div>
+    <div id="礼" style="padding:9px 15px;border-top:1px solid var(--line)"></div>
+  </div>
+</div>
+<script>
+
+const M = getChatMessages(getCurrentMessageId())[0];
+const 原文 = M ? (M.message || '') : '';
+const 取 = (名) => {
+  const re = new RegExp('<' + 名 + '(?:\\s[^>]*)?>([\\s\\S]*?)</' + 名 + '>');
+  const m = 原文.match(re);
+  return m ? m[1].trim() : '';
+};
+const 属性 = (名) => {
+  const re = new RegExp('<' + 名 + '\\s+([^>]*)>');
+  const m = 原文.match(re);
+  return m ? m[1].trim() : '';
+};
+const 转义 = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+document.getElementById('t').textContent = 属性('直播') || '直播';
+const raw = 取('直播');
+const 画 = document.getElementById('画面'), 弹 = document.getElementById('弹幕'), 礼 = document.getElementById('礼');
+let 段 = '画';
+for (const 一 of raw.split('\n')) {
+  const s = 一.trim();
+  if (!s) continue;
+  if (/^画面|^—{2,}$/.test(s)) { if (/画面/.test(s)) 段 = '画'; else 段 = '弹'; continue; }
+  if (/^公屏/.test(s)) { 段 = '弹'; continue; }
+  if (/^礼物/.test(s)) { 段 = '礼'; continue; }
+  if (段 === '画') {
+    const d = document.createElement('div');
+    d.style.cssText = 'color:var(--t-2);line-height:1.9;font-size:13.5px';
+    d.textContent = s;
+    画.appendChild(d);
+  } else if (段 === '弹') {
+    const m = s.match(/^(.+?)[：:]\s*(.*)$/);
+    const d = document.createElement('div');
+    d.style.cssText = 'display:flex;gap:8px;align-items:baseline;margin:4px 0;font-size:12.5px';
+    if (m) {
+      const 榜 = /榜一|榜1|大哥|\[.*\]/.test(m[1]);
+      d.innerHTML = `<span style="color:${榜 ? 'var(--c-money)' : 'var(--t-3)'};flex:0 0 auto;${榜 ? 'font-weight:600' : ''}">${转义(m[1])}</span>
+                     <span style="color:var(--t-2);flex:1">${转义(m[2])}</span>`;
+    } else { d.innerHTML = `<span style="color:var(--t-3)">${转义(s)}</span>`; }
+    弹.appendChild(d);
+  } else {
+    礼.innerHTML = `<span class="dsh-tag money">🎁 ${转义(s)}</span>`;
+  }
+}
+
+</script>
+</body>
+</html>

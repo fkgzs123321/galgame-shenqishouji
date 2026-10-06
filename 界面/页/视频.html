@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>视频</title>
+<link rel="stylesheet" href="https://testingcf.jsdelivr.net/gh/fkgzs123321/galgame-shenqishouji@main/界面/_共用/base.css">
+</head>
+<body style="--hue:220">
+<div class="dsh-card" style="--hue:220">
+  <div style="position:relative;padding:15px;background:linear-gradient(160deg,#0e1220,#0a0d16);border-bottom:1px solid #1c2438">
+    <div style="display:flex;align-items:center;gap:7px;margin-bottom:12px">
+      <span style="width:7px;height:7px;border-radius:50%;background:var(--c-good);box-shadow:0 0 9px var(--c-good)" class="dsh-live"></span>
+      <span class="dsh-mono" style="color:var(--c-good)">通话中</span>
+      <span style="flex:1"></span>
+      <span class="dsh-mono" id="tm">00:00</span>
+    </div>
+    <div id="c" style="color:var(--t-1);font-family:'Noto Serif SC',serif;line-height:2;font-size:13.5px"></div>
+  </div>
+  <div style="display:flex;justify-content:center;gap:22px;padding:13px">
+    <span style="width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.06);border:1px solid var(--line);font-size:16px">🎤</span>
+    <span style="width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:rgba(255,92,92,.15);border:1px solid rgba(255,92,92,.4);font-size:16px">📵</span>
+    <span style="width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.06);border:1px solid var(--line);font-size:16px">🔊</span>
+  </div>
+</div>
+<script>
+
+const M = getChatMessages(getCurrentMessageId())[0];
+const 原文 = M ? (M.message || '') : '';
+const 取 = (名) => {
+  const re = new RegExp('<' + 名 + '(?:\\s[^>]*)?>([\\s\\S]*?)</' + 名 + '>');
+  const m = 原文.match(re);
+  return m ? m[1].trim() : '';
+};
+const 属性 = (名) => {
+  const re = new RegExp('<' + 名 + '\\s+([^>]*)>');
+  const m = 原文.match(re);
+  return m ? m[1].trim() : '';
+};
+const 转义 = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+const raw = 取('视频');
+const c = document.getElementById('c');
+for (const 一 of raw.split('\n')) {
+  const s = 一.trim();
+  if (!s) continue;
+  const d = document.createElement('div');
+  if (/^[「『"“]/.test(s)) { d.className = 'dsh-quote'; }
+  else { d.textContent = s; }
+  c.appendChild(d);
+}
+// 计时器跑起来 —— 通话感
+let t = 0;
+setInterval(() => {
+  t++;
+  document.getElementById('tm').textContent =
+    String(Math.floor(t / 60)).padStart(2,'0') + ':' + String(t % 60).padStart(2,'0');
+}, 1000);
+
+</script>
+</body>
+</html>

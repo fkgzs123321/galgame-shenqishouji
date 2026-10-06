@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>帖子</title>
+<link rel="stylesheet" href="https://testingcf.jsdelivr.net/gh/fkgzs123321/galgame-shenqishouji@main/界面/_共用/base.css">
+</head>
+<body style="--hue:15">
+<div class="dsh-card" style="--hue:15">
+  <div class="dsh-hd">
+    <div class="dsh-hd-ico">📄</div>
+    <div class="dsh-hd-t" id="t">帖子</div>
+    <div class="dsh-hd-sub" id="m"></div>
+  </div>
+  <div class="dsh-bd" id="b"></div>
+</div>
+<script>
+
+const M = getChatMessages(getCurrentMessageId())[0];
+const 原文 = M ? (M.message || '') : '';
+const 取 = (名) => {
+  const re = new RegExp('<' + 名 + '(?:\\s[^>]*)?>([\\s\\S]*?)</' + 名 + '>');
+  const m = 原文.match(re);
+  return m ? m[1].trim() : '';
+};
+const 属性 = (名) => {
+  const re = new RegExp('<' + 名 + '\\s+([^>]*)>');
+  const m = 原文.match(re);
+  return m ? m[1].trim() : '';
+};
+const 转义 = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+const raw = 取('帖子');
+const 行s = raw.split('\n').map(x => x.trim());
+const b = document.getElementById('b');
+let 头 = [], 正文 = [], 评论 = [], 段 = 0;
+for (const 一 of 行s) {
+  if (/^💬|^评论/.test(一)) { 段 = 2; continue; }
+  if (/^—{2,}$/.test(一)) { 段 = 段 === 0 ? 1 : 段; continue; }
+  if (!一) continue;
+  (段 === 0 ? 头 : 段 === 1 ? 正文 : 评论).push(一);
+}
+if (头.length) {
+  document.getElementById('t').textContent = 头[0].replace(/^📄\s*/, '');
+  if (头[1]) document.getElementById('m').textContent = 头[1];
+  b.insertAdjacentHTML('beforeend', `<div class="dsh-mono" style="margin-bottom:11px">${转义(头.slice(1).join(' · '))}</div>`);
+}
+// ★ 正文：她的原话用引用块
+for (const p of 正文) {
+  const d = document.createElement('div');
+  if (/^[「『"“]/.test(p)) { d.className = 'dsh-quote'; }
+  else { d.style.cssText = 'margin:9px 0;color:var(--t-2);line-height:1.95'; }
+  d.innerHTML = 转义(p);
+  b.appendChild(d);
+}
+if (评论.length) {
+  b.insertAdjacentHTML('beforeend', '<hr class="dsh-hr">');
+  for (const r of 评论) {
+    const m = r.match(/^([^：:]+)[：:]\s*(.*)$/);
+    const d = document.createElement('div');
+    d.className = 'dsh-delta';
+    d.style.display = 'block';
+    d.innerHTML = m
+      ? `<span style="color:var(--c-info);font-size:12px">${转义(m[1])}</span>
+         <span style="color:var(--t-2);margin-left:8px">${转义(m[2])}</span>`
+      : 转义(r);
+    b.appendChild(d);
+  }
+}
+
+</script>
+</body>
+</html>

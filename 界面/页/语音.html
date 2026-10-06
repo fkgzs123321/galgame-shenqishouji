@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>语音</title>
+<link rel="stylesheet" href="https://testingcf.jsdelivr.net/gh/fkgzs123321/galgame-shenqishouji@main/界面/_共用/base.css">
+</head>
+<body style="--hue:190">
+<div class="dsh-card" style="--hue:190">
+  <div class="dsh-hd">
+    <div class="dsh-hd-ico">🎤</div>
+    <div class="dsh-hd-t" id="t">语音</div>
+    <div class="dsh-hd-sub" id="s"></div>
+  </div>
+  <div class="dsh-bd">
+    <div id="波" style="display:flex;align-items:center;gap:3px;height:26px;margin-bottom:11px"></div>
+    <div id="c" style="color:var(--t-1);font-family:'Noto Serif SC',serif;line-height:2"></div>
+  </div>
+</div>
+<script>
+
+const M = getChatMessages(getCurrentMessageId())[0];
+const 原文 = M ? (M.message || '') : '';
+const 取 = (名) => {
+  const re = new RegExp('<' + 名 + '(?:\\s[^>]*)?>([\\s\\S]*?)</' + 名 + '>');
+  const m = 原文.match(re);
+  return m ? m[1].trim() : '';
+};
+const 属性 = (名) => {
+  const re = new RegExp('<' + 名 + '\\s+([^>]*)>');
+  const m = 原文.match(re);
+  return m ? m[1].trim() : '';
+};
+const 转义 = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+document.getElementById('t').textContent = '语音 ' + (属性('语音') || '');
+const raw = 取('语音');
+const c = document.getElementById('c'), 波 = document.getElementById('波');
+// ★ 声波条 —— 随机高度，看起来像真的
+for (let i = 0; i < 32; i++) {
+  const h = 5 + Math.abs(Math.sin(i * 1.7)) * 19;
+  const d = document.createElement('span');
+  d.style.cssText = `width:2px;height:${h}px;border-radius:2px;
+    background:linear-gradient(180deg,hsl(190,70%,68%),hsl(190,60%,42%));opacity:${.45 + (h / 24) * .55}`;
+  波.appendChild(d);
+}
+for (const 一 of raw.split('\n')) {
+  const s = 一.trim();
+  if (!s) continue;
+  const d = document.createElement('div');
+  if (/^[「『"“]/.test(s)) { d.className = 'dsh-quote'; }
+  else { d.style.cssText = 'color:var(--t-3);font-size:12.5px;font-family:\'Noto Sans SC\''; }
+  d.textContent = s;
+  c.appendChild(d);
+}
+document.getElementById('s').textContent = '未播放';
+
+</script>
+</body>
+</html>

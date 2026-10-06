@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>聊天</title>
+<link rel="stylesheet" href="https://testingcf.jsdelivr.net/gh/fkgzs123321/galgame-shenqishouji@main/界面/_共用/base.css">
+</head>
+<body style="--hue:160">
+<div class="dsh-card" style="--hue:160">
+  <div class="dsh-hd">
+    <div class="dsh-hd-ico">💬</div>
+    <div class="dsh-hd-t" id="t">聊天</div>
+    <div class="dsh-hd-sub" id="s">在线</div>
+  </div>
+  <div class="dsh-bd" style="padding:14px 15px;display:flex;flex-direction:column;gap:8px" id="c"></div>
+</div>
+<script>
+
+const M = getChatMessages(getCurrentMessageId())[0];
+const 原文 = M ? (M.message || '') : '';
+const 取 = (名) => {
+  const re = new RegExp('<' + 名 + '(?:\\s[^>]*)?>([\\s\\S]*?)</' + 名 + '>');
+  const m = 原文.match(re);
+  return m ? m[1].trim() : '';
+};
+const 属性 = (名) => {
+  const re = new RegExp('<' + 名 + '\\s+([^>]*)>');
+  const m = 原文.match(re);
+  return m ? m[1].trim() : '';
+};
+const 转义 = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+document.getElementById('t').textContent = 属性('聊天') || '聊天';
+const raw = 取('聊天');
+const c = document.getElementById('c');
+for (const 一 of raw.split('\n')) {
+  const s = 一.trim();
+  if (!s) continue;
+  const 左 = s.startsWith('｜左') || s.startsWith('|左');
+  const 右 = s.startsWith('｜右') || s.startsWith('|右');
+  const 文 = s.replace(/^[｜|][左右]\s*/, '');
+  if (!左 && !右) {
+    // 旁白 / 系统行
+    const d = document.createElement('div');
+    d.className = 'dsh-mono';
+    d.style.cssText = 'text-align:center;margin:5px 0;color:var(--t-4)';
+    d.textContent = 文;
+    c.appendChild(d);
+    continue;
+  }
+  const d = document.createElement('div');
+  d.style.cssText = `max-width:78%;padding:8px 12px;border-radius:14px;font-size:13px;line-height:1.7;word-break:break-word;
+    ${左
+      ? 'align-self:flex-start;background:linear-gradient(135deg,#232030,#1a1826);border:1px solid #2e2a40;border-bottom-left-radius:4px;color:var(--t-1)'
+      : 'align-self:flex-end;background:linear-gradient(135deg,hsl(160,50%,26%),hsl(160,45%,20%));border:1px solid hsl(160,50%,35%);border-bottom-right-radius:4px;color:#e8fff8'}`;
+  if (/\[图片\]/.test(文)) {
+    d.innerHTML = '<span class="dsh-tag hot">📷 图片</span>';
+  } else if (/已撤回/.test(文)) {
+    d.innerHTML = `<span class="dsh-mono" style="font-style:italic">${转义(文)}</span>`;
+    d.style.opacity = '.55';
+  } else {
+    d.textContent = 文;
+  }
+  c.appendChild(d);
+}
+
+</script>
+</body>
+</html>
