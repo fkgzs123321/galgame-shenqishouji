@@ -24,29 +24,55 @@ const 取 = (名) => {
   const m = 原文.match(re);
   return m ? m[1].trim() : '';
 };
-const 属性 = (名) => {
-  const re = new RegExp('<' + 名 + '\\s+([^>]*)>');
-  const m = 原文.match(re);
-  return m ? m[1].trim() : '';
+// ★★★ 属性解析 —— 只用字符串操作，不用正则
+//   ★ 为什么：这里有 Python→文件→浏览器 三层转义，
+//     正则字面量里的 \s 会在某一层被吃掉或加倍，极难排查
+//   ★★ 改用 indexOf/slice 之后，没有任何转义问题
+const 拆属性 = (串) => {
+  const 出 = {};
+  let i = 0;
+  while (i < 串.length) {
+    const 等 = 串.indexOf('=', i);
+    if (等 < 0) break;
+    const 键 = 串.slice(i, 等).trim().replace(/^["'\s]+/, '');
+    let 起 = 等 + 1;
+    while (起 < 串.length && 串[起] === ' ') 起++;
+    let 值 = '';
+    if (串[起] === '"' || 串[起] === "'") {
+      const 引 = 串[起];
+      const 闭 = 串.indexOf(引, 起 + 1);
+      值 = 串.slice(起 + 1, 闭 < 0 ? 串.length : 闭);
+      i = (闭 < 0 ? 串.length : 闭) + 1;
+    } else {
+      const 空 = 串.indexOf(' ', 起);
+      值 = 串.slice(起, 空 < 0 ? 串.length : 空);
+      i = 空 < 0 ? 串.length : 空 + 1;
+    }
+    if (键) 出[键] = 值;
+  }
+  return 出;
 };
-// ★★★ 取属性的【值】—— 不是整串
+
+const 属性 = (名) => {
+  const i = 原文.indexOf('<' + 名);
+  if (i < 0) return '';
+  const j = 原文.indexOf('>', i);
+  if (j < 0) return '';
+  return 原文.slice(i + 名.length + 1, j).trim();
+};
+
+// ★ 取属性的【值】—— 不是整串
 //   ★ 踩过：原来 属性('聊天') 返回 `平台="微信"`，标题就显示这个
 //   ★★ 现在 取值('聊天') 返回 `微信`
 const 取值 = (名, key) => {
   const 串 = 属性(名);
   if (!串) return '';
-  if (key) {
-    const m = 串.match(new RegExp(key + '\\s*=\\s*"([^"]*)"'));
-    if (m) return m[1];
-    const m2 = 串.match(new RegExp(key + '\\s*=\\s*([^\\s]+)'));
-    return m2 ? m2[1] : '';
-  }
-  // ★ 没指定 key → 取第一个属性的值
-  const m = 串.match(/(?:^|\\s)[\\w\u4e00-\u9fa5]+\\s*=\\s*"([^"]*)"/);
-  if (m) return m[1];
-  const m2 = 串.match(/(?:^|\\s)[\\w\u4e00-\u9fa5]+\\s*=\\s*([^\\s]+)/);
-  return m2 ? m2[1] : 串;
+  if (key) return 拆属性(串)[key] || '';
+  const 全 = 拆属性(串);
+  const 键 = Object.keys(全);
+  return 键.length ? 全[键[0]] : 串;
 };
+
 const 转义 = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 const raw = 取('数值');
