@@ -51,6 +51,76 @@
       }
     })();
   </script>
+  <script>
+    /*
+     * ★★★ iframe 高度自适应
+     *
+     * ★ 为什么必须有：
+     *   ST 用 iframe 装我们的界面，iframe 的默认高度是固定的。
+     *   不把真实内容高度写回去，界面就会被裁成窄窄一条 + 出滚动条。
+     *
+     * ★★ 关键是 window.frameElement —— 那才是 ST 控制的那个 iframe。
+     *    只设自己文档里元素的高度【没有用】。
+     *
+     * ★ 范式和参数取自 stars 的生产用法：
+     *    · 量高前禁横向溢出（横向滚动条会把 scrollHeight 算大）
+     *    · 容差 2px（防止高频无意义 DOM 写入）
+     *    · 多轮延迟（补偿 Vue 挂载、字体、图片的异步）
+     *    · ResizeObserver 兜底（内容之后还会变）
+     */
+    (function () {
+      var 上次 = 0;
+      function 同步高() {
+        try {
+          var fe = window.frameElement;
+          if (!fe) return;
+          var b = document.body, d = document.documentElement;
+          if (!b) return;
+
+          // ★ 量高前禁横向溢出
+          b.style.overflowX = 'hidden';
+          b.style.maxWidth = '100%';
+
+          var h = Math.max(d ? d.scrollHeight : 0, b.scrollHeight,
+                           d ? d.offsetHeight : 0, b.offsetHeight || 0);
+          if (h <= 0) return;
+          if (Math.abs(h - 上次) <= 2) return;   // ★ 容差
+          上次 = h;
+
+          fe.style.height = h + 'px';
+          fe.style.minHeight = h + 'px';
+          try { fe.setAttribute('height', String(h)); } catch (e) {}
+          // ★ 有些宿主把高度加在内层容器上，一并兜住
+          try {
+            if (fe.parentElement && fe.parentElement.clientHeight < h) {
+              fe.parentElement.style.height = 'auto';
+              fe.parentElement.style.minHeight = h + 'px';
+            }
+          } catch (e) {}
+        } catch (e) { /* 跨域就跳过 */ }
+      }
+      window.__dshSyncHeight = 同步高;
+
+      // ★ 多轮延迟 —— 补偿异步渲染
+      [0, 60, 150, 300, 600, 1000, 1800, 3000, 5000].forEach(function (t) {
+        setTimeout(同步高, t);
+      });
+
+      // ★ 内容尺寸变化时持续同步
+      if (window.ResizeObserver) {
+        try {
+          new ResizeObserver(同步高).observe(document.documentElement);
+          if (document.body) new ResizeObserver(同步高).observe(document.body);
+        } catch (e) {}
+      }
+      // ★ 字体/图片加载完再量一次
+      try {
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(同步高);
+      } catch (e) {}
+      window.addEventListener('load', 同步高);
+      window.addEventListener('resize', 同步高);
+    })();
+  </script>
 <script type="module">import * as __WEBPACK_EXTERNAL_MODULE_https_testingcf_jsdelivr_net_npm_klona_2_0_6_esm_f47a84ec__ from "https://testingcf.jsdelivr.net/npm/klona@2.0.6/+esm";
 
 var __webpack_modules__ = {
