@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>订阅</title>
+<link rel="stylesheet" href="https://testingcf.jsdelivr.net/gh/fkgzs123321/galgame-shenqishouji@main/界面/_共用/base.css">
+</head>
+<body style="--hue:275">
+<div class="dsh-card">
+  <div class="dsh-hd">
+    <div class="dsh-hd-ico">🔓</div>
+    <div class="dsh-hd-t" id="t">订阅</div>
+    <div class="dsh-hd-sub" id="n">—</div>
+  </div>
+  <div class="dsh-bd" id="l"></div>
+</div>
+<script>
+
+const M = getChatMessages(getCurrentMessageId())[0];
+const 原文 = M ? (M.message || '') : '';
+const 取 = (名) => {
+  const re = new RegExp('<' + 名 + '(?:\\s[^>]*)?>([\\s\\S]*?)</' + 名 + '>');
+  const m = 原文.match(re);
+  return m ? m[1].trim() : '';
+};
+const 属性 = (名) => {
+  const re = new RegExp('<' + 名 + '\\s+([^>]*)>');
+  const m = 原文.match(re);
+  return m ? m[1].trim() : '';
+};
+const 转义 = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+document.getElementById('t').textContent = 属性('订阅') || '订阅';
+const raw = 取('订阅');
+const l = document.getElementById('l');
+
+// ★ 行格式：
+//   免费 / 已订阅 / 需 ¥xx / 🔒
+//   ★ 未订阅的整行压暗 + 锁标记
+const 行s = raw.split('\n').map((x) => x.trim()).filter(Boolean);
+let 锁 = 0, 开 = 0;
+for (const s of 行s) {
+  if (/^[—\-]{3,}$/.test(s)) {
+    const hr = document.createElement('hr');
+    hr.className = 'dsh-hr';
+    l.appendChild(hr);
+    continue;
+  }
+  const 未订阅 = /锁|🔒|需\s*[¥￥\d]|订阅后|付费|未解锁|Patreon|DM/i.test(s);
+  const 等级 = s.match(/(免费|已订阅|已解锁|需\s*[¥￥]?\s*[\d,.]+)/);
+  if (未订阅) 锁++; else 开++;
+  const d = document.createElement('div');
+  d.style.cssText = `display:flex;gap:9px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--line);
+    ${未订阅 ? 'opacity:.5' : ''}`;
+  d.innerHTML = `
+    <span style="flex:0 0 auto;font-size:12px">${未订阅 ? '🔒' : '🔓'}</span>
+    <span style="flex:1;color:var(--t-${未订阅 ? '3' : '1'});font-size:13px;
+      ${未订阅 ? 'filter:blur(.3px)' : ''}">${转义(s)}</span>
+    ${等级 ? `<span class="dsh-tag ${未订阅 ? 'warn' : 'good'}" style="font-size:9.5px">${转义(等级[1])}</span>` : ''}`;
+  l.appendChild(d);
+}
+if (!行s.length && raw) {
+  l.innerHTML = `<div style="color:var(--t-3);white-space:pre-wrap">${转义(raw)}</div>`;
+}
+document.getElementById('n').textContent = (锁 + 开) ? `🔓${开} 🔒${锁}` : '';
+
+</script>
+</body>
+</html>

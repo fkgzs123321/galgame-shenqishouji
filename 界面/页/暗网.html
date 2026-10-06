@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>暗网</title>
+<link rel="stylesheet" href="https://testingcf.jsdelivr.net/gh/fkgzs123321/galgame-shenqishouji@main/界面/_共用/base.css">
+</head>
+<body style="--hue:140">
+<div class="dsh-card" style="--hue:140">
+  <div class="dsh-hd">
+    <div class="dsh-hd-ico" style="font-family:'JetBrains Mono',monospace">&gt;_</div>
+    <div class="dsh-hd-t" id="t" style="font-family:'JetBrains Mono',monospace">dark</div>
+    <div class="dsh-hd-sub" id="n">.</div>
+  </div>
+  <div class="dsh-bd" id="l" style="font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.85"></div>
+</div>
+<script>
+
+const M = getChatMessages(getCurrentMessageId())[0];
+const 原文 = M ? (M.message || '') : '';
+const 取 = (名) => {
+  const re = new RegExp('<' + 名 + '(?:\\s[^>]*)?>([\\s\\S]*?)</' + 名 + '>');
+  const m = 原文.match(re);
+  return m ? m[1].trim() : '';
+};
+const 属性 = (名) => {
+  const re = new RegExp('<' + 名 + '\\s+([^>]*)>');
+  const m = 原文.match(re);
+  return m ? m[1].trim() : '';
+};
+const 转义 = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+document.getElementById('t').textContent = 属性('暗网') || 'dark';
+const raw = 取('暗网');
+const l = document.getElementById('l');
+
+// ★ 终端风：每行前面加 <span style="color:var(--c-good)">▸</span>
+//   ★ 关键行（价格、地址、警告）高亮
+const 行s = raw.split('\n').map((x) => x.trim()).filter(Boolean);
+for (const s of 行s) {
+  if (/^[—\-]{3,}$/.test(s)) {
+    const hr = document.createElement('hr');
+    hr.className = 'dsh-hr';
+    l.appendChild(hr);
+    continue;
+  }
+  const 警告 = /警告|危险|被抓|下套|骗|钓鱼|执法|LE\b/i.test(s);
+  const 钱 = /[¥￥$]\s*[\d,.]+|\d+\s*(BTC|XMR|USDT|btc|xmr|usdt)/.test(s);
+  const d = document.createElement('div');
+  d.style.cssText = 'display:flex;gap:7px;padding:3px 0';
+  let 色 = 'var(--t-2)';
+  let 标 = '▸';
+  if (警告) { 色 = 'var(--c-bad)'; 标 = '⚠'; }
+  else if (钱) { 色 = 'var(--c-money)'; 标 = '$'; }
+  d.innerHTML = `<span style="flex:0 0 auto;color:${警告 ? 'var(--c-bad)' : 'var(--c-good)'};opacity:.8">${标}</span>
+    <span style="flex:1;color:${色};word-break:break-word">${转义(s)}</span>`;
+  l.appendChild(d);
+}
+if (!行s.length && raw) {
+  l.innerHTML = `<div style="color:var(--t-3);white-space:pre-wrap">${转义(raw)}</div>`;
+}
+document.getElementById('n').textContent = 行s.length ? 行s.length + ' 行' : '.';
+
+</script>
+</body>
+</html>

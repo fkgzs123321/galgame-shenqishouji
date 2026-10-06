@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>报价</title>
+<link rel="stylesheet" href="https://testingcf.jsdelivr.net/gh/fkgzs123321/galgame-shenqishouji@main/界面/_共用/base.css">
+</head>
+<body style="--hue:40">
+<div class="dsh-card">
+  <div class="dsh-hd">
+    <div class="dsh-hd-ico">💰</div>
+    <div class="dsh-hd-t" id="t">报价</div>
+    <div class="dsh-hd-sub" id="n">—</div>
+  </div>
+  <div class="dsh-bd" id="l"></div>
+</div>
+<script>
+
+const M = getChatMessages(getCurrentMessageId())[0];
+const 原文 = M ? (M.message || '') : '';
+const 取 = (名) => {
+  const re = new RegExp('<' + 名 + '(?:\\s[^>]*)?>([\\s\\S]*?)</' + 名 + '>');
+  const m = 原文.match(re);
+  return m ? m[1].trim() : '';
+};
+const 属性 = (名) => {
+  const re = new RegExp('<' + 名 + '\\s+([^>]*)>');
+  const m = 原文.match(re);
+  return m ? m[1].trim() : '';
+};
+const 转义 = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+document.getElementById('t').textContent = 属性('报价') || '报价';
+const raw = 取('报价');
+const l = document.getElementById('l');
+
+// ★ 行格式：项目 · 价格 ｜ 备注
+//   ★ 价格高亮（--c-money）
+const 行s = raw.split('\n').map((x) => x.trim()).filter(Boolean);
+let 有价 = 0;
+for (const s of 行s) {
+  if (/^[—\-]{3,}$/.test(s)) {
+    const hr = document.createElement('hr');
+    hr.className = 'dsh-hr';
+    l.appendChild(hr);
+    continue;
+  }
+  // ★ 找价格：数字 + 元/K/千/万，或 ¥
+  const m = s.match(/(¥|￥)?\s*([\d,]+(?:\.\d+)?)\s*(万|千|K|k|元|块|美元|\$)?/);
+  let 剩 = s, 价 = '';
+  if (m && m[2]) {
+    价 = m[0].trim();
+    剩 = s.replace(m[0], '').replace(/[｜|·:：]\s*$/, '').replace(/^[｜|·:：]\s*/, '').trim();
+    有价++;
+  }
+  const d = document.createElement('div');
+  d.style.cssText = 'display:flex;gap:10px;align-items:baseline;padding:7px 0;border-bottom:1px solid var(--line)';
+  d.innerHTML = `
+    <span style="flex:1;color:var(--t-2);font-size:13px">${转义(剩 || s)}</span>
+    ${价 ? `<span class="dsh-num money" style="font-size:13.5px">${转义(价)}</span>` : ''}`;
+  l.appendChild(d);
+}
+if (!行s.length && raw) {
+  l.innerHTML = `<div style="color:var(--t-3);white-space:pre-wrap">${转义(raw)}</div>`;
+}
+document.getElementById('n').textContent = 有价 ? 有价 + ' 项报价' : '';
+
+</script>
+</body>
+</html>

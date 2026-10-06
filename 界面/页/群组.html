@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>群组</title>
+<link rel="stylesheet" href="https://testingcf.jsdelivr.net/gh/fkgzs123321/galgame-shenqishouji@main/界面/_共用/base.css">
+</head>
+<body style="--hue:200">
+<div class="dsh-card">
+  <div class="dsh-hd">
+    <div class="dsh-hd-ico">👥</div>
+    <div class="dsh-hd-t" id="t">群组</div>
+    <div class="dsh-hd-sub" id="n">—</div>
+  </div>
+  <div class="dsh-bd p0" id="l"></div>
+</div>
+<script>
+
+const M = getChatMessages(getCurrentMessageId())[0];
+const 原文 = M ? (M.message || '') : '';
+const 取 = (名) => {
+  const re = new RegExp('<' + 名 + '(?:\\s[^>]*)?>([\\s\\S]*?)</' + 名 + '>');
+  const m = 原文.match(re);
+  return m ? m[1].trim() : '';
+};
+const 属性 = (名) => {
+  const re = new RegExp('<' + 名 + '\\s+([^>]*)>');
+  const m = 原文.match(re);
+  return m ? m[1].trim() : '';
+};
+const 转义 = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+document.getElementById('t').textContent = 属性('群组') || '群组';
+const raw = 取('群组');
+const l = document.getElementById('l');
+
+// ★ 三种行：
+//   规则行（★ 开头 / 禁 / 必须）→ 高亮
+//   成员行（｜名字 角色）       → 头像 + 名字
+//   消息行（｜名字 内容）       → 气泡
+const 行s = raw.split('\n').map((x) => x.trim()).filter(Boolean);
+for (const s of 行s) {
+  const 是规则 = /^[★☆]|规则|禁止|必须|不许|门槛|验证/i.test(s);
+  const 是成员 = /^[｜|]/.test(s);
+  const d = document.createElement('div');
+
+  if (是规则) {
+    d.className = 'dsh-key';
+    d.style.cssText = 'margin:9px 15px;font-size:12.5px;padding:8px 11px';
+    d.textContent = s;
+    l.appendChild(d);
+    continue;
+  }
+  if (是成员) {
+    const 内 = s.replace(/^[｜|]\s*/, '');
+    const 段 = 内.split(/[\s·:：]+/);
+    const 名 = 段[0] || '';
+    const 角 = 段.slice(1).join(' ');
+    d.style.cssText = 'display:flex;gap:10px;align-items:center;padding:8px 15px;border-bottom:1px solid var(--line)';
+    d.innerHTML = `
+      <div style="flex:0 0 auto;width:28px;height:28px;border-radius:9px;
+        background:linear-gradient(135deg,hsl(200,50%,30%),hsl(200,45%,20%));
+        border:1px solid hsl(200,50%,40%);display:grid;place-items:center;
+        font-size:12px;color:hsl(200,70%,80%)">${转义(名.slice(0, 1))}</div>
+      <div style="flex:1;min-width:0">
+        <span style="color:var(--t-1);font-size:13px">${转义(名)}</span>
+        ${角 ? `<span class="dsh-mono" style="margin-left:7px">${转义(角)}</span>` : ''}
+      </div>`;
+    l.appendChild(d);
+    continue;
+  }
+  d.style.cssText = 'padding:7px 15px;color:var(--t-2);font-size:12.5px;line-height:1.72';
+  d.textContent = s;
+  l.appendChild(d);
+}
+if (!行s.length && raw) {
+  l.innerHTML = `<div style="padding:14px;color:var(--t-3);white-space:pre-wrap">${转义(raw)}</div>`;
+}
+document.getElementById('n').textContent = 行s.length ? 行s.length + ' 行' : '';
+
+</script>
+</body>
+</html>

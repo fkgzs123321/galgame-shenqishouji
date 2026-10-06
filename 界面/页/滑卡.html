@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>滑卡</title>
+<link rel="stylesheet" href="https://testingcf.jsdelivr.net/gh/fkgzs123321/galgame-shenqishouji@main/界面/_共用/base.css">
+</head>
+<body style="--hue:340">
+<div class="dsh-card">
+  <div class="dsh-hd">
+    <div class="dsh-hd-ico">💘</div>
+    <div class="dsh-hd-t" id="t">约会</div>
+    <div class="dsh-hd-sub" id="n">—</div>
+  </div>
+  <div class="dsh-bd p0" id="l"></div>
+</div>
+<script>
+
+const M = getChatMessages(getCurrentMessageId())[0];
+const 原文 = M ? (M.message || '') : '';
+const 取 = (名) => {
+  const re = new RegExp('<' + 名 + '(?:\\s[^>]*)?>([\\s\\S]*?)</' + 名 + '>');
+  const m = 原文.match(re);
+  return m ? m[1].trim() : '';
+};
+const 属性 = (名) => {
+  const re = new RegExp('<' + 名 + '\\s+([^>]*)>');
+  const m = 原文.match(re);
+  return m ? m[1].trim() : '';
+};
+const 转义 = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+document.getElementById('t').textContent = 属性('滑卡') || '约会';
+const raw = 取('滑卡');
+const l = document.getElementById('l');
+
+// ★ 一行一个人：名字 | 年龄 | 距离 | 一句话 | 状态
+//   ★ 用 ———— 分段，段内换行
+const 块 = raw.split(/—{3,}/).map((x) => x.trim()).filter(Boolean);
+let i = 0;
+for (const b of 块) {
+  const 行 = b.split('\n').map((x) => x.trim()).filter(Boolean);
+  if (!行.length) continue;
+  const 名 = 行[0].replace(/^【\d+】/, '').replace(/^【|】$/g, '');
+  const 编 = (行[0].match(/^【(\d+)】/) || [])[1] || (++i);
+  const 元 = 行[1] || '';
+  const 话 = 行.slice(2).join(' ');
+  // ★ 元信息：22 · 1.8km · 在线
+  const 在线 = /在线|刚刚|now|active/i.test(元);
+  const 远 = (元.match(/([\d.]+)\s*(km|公里|m)/i) || [])[1];
+  const 岁 = (元.match(/(\d{2})\s*岁/) || [])[1];
+
+  const d = document.createElement('div');
+  d.style.cssText = 'padding:11px 15px;border-bottom:1px solid var(--line);display:flex;gap:11px;align-items:flex-start';
+  d.innerHTML = `
+    <div style="flex:0 0 auto;width:38px;height:38px;border-radius:11px;
+      background:linear-gradient(135deg,hsl(340,50%,34%),hsl(340,45%,22%));
+      border:1px solid hsl(340,50%,42%);display:grid;place-items:center;
+      font-size:14px;color:hsl(340,70%,80%)">${岁 ? 岁 : 编}</div>
+    <div style="flex:1;min-width:0">
+      <div style="display:flex;gap:7px;align-items:baseline;flex-wrap:wrap">
+        <span style="color:var(--t-1);font-size:13.5px;font-weight:500">${转义(名)}</span>
+        ${在线 ? '<span class="dsh-tag good" style="font-size:9.5px">● 在线</span>' : ''}
+        ${远 ? `<span class="dsh-mono">${远} km</span>` : ''}
+      </div>
+      ${元 ? `<div class="dsh-mono" style="margin-top:3px">${转义(元)}</div>` : ''}
+      ${话 ? `<div style="margin-top:6px;color:var(--t-2);font-size:12.5px;line-height:1.7">${转义(话)}</div>` : ''}
+    </div>`;
+  l.appendChild(d);
+}
+if (!块.length && raw) {
+  l.innerHTML = `<div style="padding:14px;color:var(--t-3);white-space:pre-wrap">${转义(raw)}</div>`;
+}
+document.getElementById('n').textContent = 块.length ? 块.length + ' 个' : '';
+
+</script>
+</body>
+</html>
