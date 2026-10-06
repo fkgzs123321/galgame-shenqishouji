@@ -29,9 +29,27 @@ const 属性 = (名) => {
   const m = 原文.match(re);
   return m ? m[1].trim() : '';
 };
+// ★★★ 取属性的【值】—— 不是整串
+//   ★ 踩过：原来 属性('聊天') 返回 `平台="微信"`，标题就显示这个
+//   ★★ 现在 取值('聊天') 返回 `微信`
+const 取值 = (名, key) => {
+  const 串 = 属性(名);
+  if (!串) return '';
+  if (key) {
+    const m = 串.match(new RegExp(key + '\\s*=\\s*"([^"]*)"'));
+    if (m) return m[1];
+    const m2 = 串.match(new RegExp(key + '\\s*=\\s*([^\\s]+)'));
+    return m2 ? m2[1] : '';
+  }
+  // ★ 没指定 key → 取第一个属性的值
+  const m = 串.match(/(?:^|\\s)[\\w\u4e00-\u9fa5]+\\s*=\\s*"([^"]*)"/);
+  if (m) return m[1];
+  const m2 = 串.match(/(?:^|\\s)[\\w\u4e00-\u9fa5]+\\s*=\\s*([^\\s]+)/);
+  return m2 ? m2[1] : 串;
+};
 const 转义 = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
-document.getElementById('t').textContent = 属性('报价') || '报价';
+document.getElementById('t').textContent = 取值('报价') || '报价';
 const raw = 取('报价');
 const l = document.getElementById('l');
 
