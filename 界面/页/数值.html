@@ -5,108 +5,134 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>数值</title>
 <link rel="stylesheet" href="https://testingcf.jsdelivr.net/gh/fkgzs123321/galgame-shenqishouji@main/界面/_共用/base.css">
+<style>
+  .stat-card {
+    max-width: 440px;
+    margin: 10px auto;
+    background: #09080e;
+    border-radius: 18px;
+    border: 1px solid rgba(139, 92, 246, 0.25);
+    box-shadow: 0 14px 36px -8px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(139, 92, 246, 0.15);
+    overflow: hidden;
+  }
+  .stat-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: rgba(139, 92, 246, 0.08);
+    border-bottom: 1px solid rgba(139, 92, 246, 0.15);
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #c4b5fd;
+    letter-spacing: 0.05em;
+  }
+  .stat-list {
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .stat-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  .stat-label {
+    color: #d1ccd9;
+    font-weight: 500;
+  }
+  .stat-val-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+  }
+  .stat-flow {
+    color: #8e889e;
+  }
+  .stat-delta {
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 10.5px;
+  }
+  .stat-delta.up {
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+  }
+  .stat-delta.down {
+    color: #f43f5e;
+    background: rgba(244, 63, 94, 0.12);
+    border: 1px solid rgba(244, 63, 94, 0.25);
+  }
+</style>
 </head>
-<body style="--hue:265">
-<div class="dsh-card" id="box">
-  <div class="dsh-hd">
-    <div class="dsh-hd-ico">📊</div>
-    <div class="dsh-hd-t">数值变化</div>
-    <div class="dsh-hd-sub" id="t">—</div>
+<body>
+<div class="stat-card">
+  <div class="stat-header">
+    <span>⚡</span>
+    <span>机主生物神经与实时数据变动</span>
   </div>
-  <div class="dsh-bd p0" id="list"></div>
+  <div class="stat-list" id="list"></div>
 </div>
 <script>
-
 const M = getChatMessages(getCurrentMessageId())[0];
 const 原文 = M ? (M.message || '') : '';
 const 取 = (名) => {
-  const re = new RegExp('<' + 名 + '(?:\\s[^>]*)?>([\\s\\S]*?)</' + 名 + '>');
-  const m = 原文.match(re);
+  let myIndex = 0;
+  try {
+    const fe = window.frameElement;
+    if (fe) {
+      const parent = fe.closest ? fe.closest('.mes_text') : fe.parentElement;
+      if (parent) {
+        const iframes = Array.from(parent.querySelectorAll('iframe'));
+        const same = iframes.filter(f => f === fe || f.src === fe.src);
+        const found = same.indexOf(fe);
+        if (found >= 0) myIndex = found;
+      }
+    }
+  } catch (e) {}
+  const allMatches = Array.from(原文.matchAll(new RegExp('<' + 名 + '(?:\\s[^>]*)?>([\\s\\S]*?)</' + 名 + '>', 'g')));
+  const m = allMatches[myIndex] || allMatches[0];
   return m ? m[1].trim() : '';
 };
-// ★★★ 属性解析 —— 只用字符串操作，不用正则
-//   ★ 为什么：这里有 Python→文件→浏览器 三层转义，
-//     正则字面量里的 \s 会在某一层被吃掉或加倍，极难排查
-//   ★★ 改用 indexOf/slice 之后，没有任何转义问题
-const 拆属性 = (串) => {
-  const 出 = {};
-  let i = 0;
-  while (i < 串.length) {
-    const 等 = 串.indexOf('=', i);
-    if (等 < 0) break;
-    const 键 = 串.slice(i, 等).trim().replace(/^["'\s]+/, '');
-    let 起 = 等 + 1;
-    while (起 < 串.length && 串[起] === ' ') 起++;
-    let 值 = '';
-    if (串[起] === '"' || 串[起] === "'") {
-      const 引 = 串[起];
-      const 闭 = 串.indexOf(引, 起 + 1);
-      值 = 串.slice(起 + 1, 闭 < 0 ? 串.length : 闭);
-      i = (闭 < 0 ? 串.length : 闭) + 1;
-    } else {
-      const 空 = 串.indexOf(' ', 起);
-      值 = 串.slice(起, 空 < 0 ? 串.length : 空);
-      i = 空 < 0 ? 串.length : 空 + 1;
-    }
-    if (键) 出[键] = 值;
-  }
-  return 出;
-};
-
-const 属性 = (名) => {
-  const i = 原文.indexOf('<' + 名);
-  if (i < 0) return '';
-  const j = 原文.indexOf('>', i);
-  if (j < 0) return '';
-  return 原文.slice(i + 名.length + 1, j).trim();
-};
-
-// ★ 取属性的【值】—— 不是整串
-//   ★ 踩过：原来 属性('聊天') 返回 `平台="微信"`，标题就显示这个
-//   ★★ 现在 取值('聊天') 返回 `微信`
-const 取值 = (名, key) => {
-  const 串 = 属性(名);
-  if (!串) return '';
-  if (key) return 拆属性(串)[key] || '';
-  const 全 = 拆属性(串);
-  const 键 = Object.keys(全);
-  return 键.length ? 全[键[0]] : 串;
-};
-
-const 转义 = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 const raw = 取('数值');
 const list = document.getElementById('list');
-const 行 = raw.split('\n').map(x => x.trim()).filter(Boolean);
-let n = 0;
-for (const 一 of 行) {
-  // 形式：● 兴奋 45 → 58 ▲13   或   ● 现金 20000 → 19970 ▼30（打车）
-  const m = 一.match(/^[●•*]?\s*([^0-9\-+▲▼]+?)\s*([\d.,]+)\s*(?:→|->)\s*([\d.,]+)\s*([▲▼+\-])\s*([\d.,]+)\s*(.*)$/);
-  if (!m) {
-    // 纯文字行 → 当说明
-    if (一.length > 1) {
-      const d = document.createElement('div');
-      d.className = 'dsh-key';
-      d.textContent = 一.replace(/^[●•*]\s*/, '');
-      list.appendChild(d);
-    }
-    continue;
-  }
-  const [, 名, 旧, 新, 号, 差, 注] = m;
-  const 上 = (号 === '▲' || 号 === '+');
-  const 色 = /现金|钱|¥/.test(名) ? 'money' : /经验|阅历/.test(名) ? 'exp' : '';
-  const d = document.createElement('div');
-  d.className = 'dsh-delta';
-  d.innerHTML = `<span class="dsh-delta-k">${转义(名.trim())}</span>
-    <span class="dsh-delta-v">${转义(旧)} → ${转义(新)}</span>
-    <span class="dsh-delta-a ${上 ? 'up' : 'down'}">${上 ? '▲' : '▼'}${转义(差)}</span>` +
-    (注 ? `<span class="dsh-mono" style="margin-left:6px">${转义(注)}</span>` : '');
-  list.appendChild(d);
-  n++;
-}
-document.getElementById('t').textContent = n + ' 项';
-if (!list.children.length) document.getElementById('box').style.display = 'none';
 
+for (const 一 of raw.split('\n')) {
+  const s = 一.trim();
+  if (!s) continue;
+  const row = document.createElement('div');
+  row.className = 'stat-row';
+  
+  const clean = s.replace(/^[●•·\s]+/, '');
+  const deltaMatch = clean.match(/([▲▼][\d.%]+(?:\([^)]*\))?)/);
+  const delta = deltaMatch ? deltaMatch[1] : '';
+  const mainPart = clean.replace(/([▲▼][\d.%]+(?:\([^)]*\))?)/, '').trim();
+  
+  const labelDiv = document.createElement('span');
+  labelDiv.className = 'stat-label';
+  labelDiv.textContent = mainPart;
+  row.appendChild(labelDiv);
+  
+  if (delta) {
+    const dSpan = document.createElement('span');
+    const isUp = delta.startsWith('▲');
+    dSpan.className = 'stat-delta ' + (isUp ? 'up' : 'down');
+    dSpan.textContent = delta;
+    row.appendChild(dSpan);
+  }
+  list.appendChild(row);
+}
 </script>
 </body>
 </html>

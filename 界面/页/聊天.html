@@ -5,18 +5,116 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>聊天</title>
 <link rel="stylesheet" href="https://testingcf.jsdelivr.net/gh/fkgzs123321/galgame-shenqishouji@main/界面/_共用/base.css">
+<style>
+  .chat-card {
+    max-width: 440px;
+    margin: 12px auto;
+    background: #0c0b12;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+  }
+  .chat-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .chat-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #a78bfa, #ec4899);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .chat-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .chat-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+  }
+  .chat-status {
+    font-size: 10.5px;
+    color: #10b981;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .chat-status-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 6px #10b981;
+  }
+  .chat-body {
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .bubble-row {
+    display: flex;
+    width: 100%;
+  }
+  .bubble-row.left {
+    justify-content: flex-start;
+  }
+  .bubble-row.right {
+    justify-content: flex-end;
+  }
+  .bubble {
+    max-width: 82%;
+    padding: 9px 13px;
+    font-size: 13px;
+    line-height: 1.6;
+    word-break: break-word;
+  }
+  .bubble.left {
+    background: #1a1824;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 16px 16px 16px 4px;
+    color: #e2e0eb;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  }
+  .bubble.right {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border-radius: 16px 16px 4px 16px;
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);
+  }
+  .sys-note {
+    text-align: center;
+    font-size: 11px;
+    color: #645e75;
+    margin: 4px 0;
+  }
+</style>
 </head>
-<body style="--hue:160">
-<div class="dsh-card" style="--hue:160">
-  <div class="dsh-hd">
-    <div class="dsh-hd-ico">💬</div>
-    <div class="dsh-hd-t" id="t">聊天</div>
-    <div class="dsh-hd-sub" id="s">在线</div>
+<body>
+<div class="chat-card">
+  <div class="chat-header">
+    <div class="chat-avatar" id="av">💬</div>
+    <div class="chat-info">
+      <span class="chat-name" id="t">私聊</span>
+      <span class="chat-status"><span class="chat-status-dot"></span>加密专线 · 在线</span>
+    </div>
   </div>
-  <div class="dsh-bd" style="padding:14px 15px;display:flex;flex-direction:column;gap:8px" id="c"></div>
+  <div class="chat-body" id="c"></div>
 </div>
 <script>
-
 const M = getChatMessages(getCurrentMessageId())[0];
 const 原文 = M ? (M.message || '') : '';
 const 取 = (名) => {
@@ -37,34 +135,6 @@ const 取 = (名) => {
   const m = allMatches[myIndex] || allMatches[0];
   return m ? m[1].trim() : '';
 };
-// ★★★ 属性解析 —— 只用字符串操作，不用正则
-//   ★ 为什么：这里有 Python→文件→浏览器 三层转义，
-//     正则字面量里的 \s 会在某一层被吃掉或加倍，极难排查
-//   ★★ 改用 indexOf/slice 之后，没有任何转义问题
-const 拆属性 = (串) => {
-  const 出 = {};
-  let i = 0;
-  while (i < 串.length) {
-    const 等 = 串.indexOf('=', i);
-    if (等 < 0) break;
-    const 键 = 串.slice(i, 等).trim().replace(/^["'\s]+/, '');
-    let 起 = 等 + 1;
-    while (起 < 串.length && 串[起] === ' ') 起++;
-    let 值 = '';
-    if (串[起] === '"' || 串[起] === "'") {
-      const 引 = 串[起];
-      const 闭 = 串.indexOf(引, 起 + 1);
-      值 = 串.slice(起 + 1, 闭 < 0 ? 串.length : 闭);
-      i = (闭 < 0 ? 串.length : 闭) + 1;
-    } else {
-      const 空 = 串.indexOf(' ', 起);
-      值 = 串.slice(起, 空 < 0 ? 串.length : 空);
-      i = 空 < 0 ? 串.length : 空 + 1;
-    }
-    if (键) 出[键] = 值;
-  }
-  return 出;
-};
 
 const 属性 = (名) => {
   const i = 原文.indexOf('<' + 名);
@@ -74,54 +144,35 @@ const 属性 = (名) => {
   return 原文.slice(i + 名.length + 1, j).trim();
 };
 
-// ★ 取属性的【值】—— 不是整串
-//   ★ 踩过：原来 属性('聊天') 返回 `平台="微信"`，标题就显示这个
-//   ★★ 现在 取值('聊天') 返回 `微信`
-const 取值 = (名, key) => {
-  const 串 = 属性(名);
-  if (!串) return '';
-  if (key) return 拆属性(串)[key] || '';
-  const 全 = 拆属性(串);
-  const 键 = Object.keys(全);
-  return 键.length ? 全[键[0]] : 串;
-};
+const title = 属性('聊天');
+if (title) {
+  document.getElementById('t').textContent = title.replace(/^对方[=:]\s*/, '').replace(/["']/g, '');
+  document.getElementById('av').textContent = title.trim().charAt(0) || '💬';
+}
 
-const 转义 = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-
-document.getElementById('t').textContent = 取值('聊天') || '聊天';
 const raw = 取('聊天');
 const c = document.getElementById('c');
+
 for (const 一 of raw.split('\n')) {
   const s = 一.trim();
   if (!s) continue;
   const 左 = s.startsWith('｜左') || s.startsWith('|左');
   const 右 = s.startsWith('｜右') || s.startsWith('|右');
   const 文 = s.replace(/^[｜|][左右]\s*/, '');
-  if (!左 && !右) {
-    // 旁白 / 系统行
-    const d = document.createElement('div');
-    d.className = 'dsh-mono';
-    d.style.cssText = 'text-align:center;margin:5px 0;color:var(--t-4)';
-    d.textContent = 文;
-    c.appendChild(d);
-    continue;
-  }
-  const d = document.createElement('div');
-  d.style.cssText = `max-width:78%;padding:8px 12px;border-radius:14px;font-size:13px;line-height:1.7;word-break:break-word;
-    ${左
-      ? 'align-self:flex-start;background:linear-gradient(135deg,#232030,#1a1826);border:1px solid #2e2a40;border-bottom-left-radius:4px;color:var(--t-1)'
-      : 'align-self:flex-end;background:linear-gradient(135deg,hsl(160,50%,26%),hsl(160,45%,20%));border:1px solid hsl(160,50%,35%);border-bottom-right-radius:4px;color:#e8fff8'}`;
-  if (/\[图片\]/.test(文)) {
-    d.innerHTML = '<span class="dsh-tag hot">📷 图片</span>';
-  } else if (/已撤回/.test(文)) {
-    d.innerHTML = `<span class="dsh-mono" style="font-style:italic">${转义(文)}</span>`;
-    d.style.opacity = '.55';
+  
+  const row = document.createElement('div');
+  if (左 || 右) {
+    row.className = 'bubble-row ' + (左 ? 'left' : 'right');
+    const b = document.createElement('div');
+    b.className = 'bubble ' + (左 ? 'left' : 'right');
+    b.textContent = 文;
+    row.appendChild(b);
   } else {
-    d.textContent = 文;
+    row.className = 'sys-note';
+    row.textContent = s;
   }
-  c.appendChild(d);
+  c.appendChild(row);
 }
-
 </script>
 </body>
 </html>

@@ -3,21 +3,115 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>手机</title>
+<title>神奇手机</title>
 <link rel="stylesheet" href="https://testingcf.jsdelivr.net/gh/fkgzs123321/galgame-shenqishouji@main/界面/_共用/base.css">
+<style>
+  .phone-frame {
+    max-width: 440px;
+    margin: 10px auto;
+    background: #09080e;
+    border-radius: 26px;
+    border: 2px solid #231f32;
+    box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  .phone-top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 18px 4px;
+    background: #0d0b16;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  .phone-clock {
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .dynamic-island {
+    width: 76px;
+    height: 12px;
+    background: #000;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .sensor-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 4px #10b981;
+  }
+  .phone-status-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10.5px;
+    color: rgba(255, 255, 255, 0.6);
+  }
+  .battery-pill {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 3px;
+    padding: 1px 2px;
+    height: 10px;
+    width: 18px;
+  }
+  .battery-level {
+    height: 100%;
+    width: 85%;
+    background: #10b981;
+    border-radius: 1px;
+  }
+  .phone-body {
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .phone-item {
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    padding: 9px 12px;
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: #d1ccd9;
+  }
+  .phone-item.primary {
+    background: rgba(139, 92, 246, 0.08);
+    border-color: rgba(139, 92, 246, 0.25);
+    color: #fff;
+  }
+  .phone-item.radar {
+    background: rgba(245, 158, 11, 0.08);
+    border-color: rgba(245, 158, 11, 0.25);
+    color: #fde68a;
+  }
+</style>
 </head>
-<body style="--hue:265">
-<div class="dsh-card" style="--hue:265;max-width:440px;margin:14px auto">
-  <div style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:linear-gradient(180deg,#15121f,#0d0b14);border-bottom:1px solid #241f36">
-    <span style="font-size:11px;color:var(--c-time);font-family:'JetBrains Mono',monospace" id="clock">--:--</span>
-    <span style="flex:1;text-align:center;font-size:11.5px;color:var(--t-3);letter-spacing:.1em">神奇手机</span>
-    <span style="font-size:11px;color:var(--c-good)">●●●</span>
-    <span style="font-size:11px;color:var(--t-4)" id="bat">87%</span>
+<body>
+<div class="phone-frame">
+  <div class="phone-top-bar">
+    <span class="phone-clock" id="clock">--:--</span>
+    <div class="dynamic-island">
+      <span class="sensor-dot"></span>
+    </div>
+    <div class="phone-status-right">
+      <span>5G</span>
+      <span class="battery-pill"><span class="battery-level"></span></span>
+      <span id="bat">87%</span>
+    </div>
   </div>
-  <div class="dsh-bd" style="padding:15px 16px;font-family:'Noto Sans SC',sans-serif" id="c"></div>
+  <div class="phone-body" id="c"></div>
 </div>
 <script>
-
 const M = getChatMessages(getCurrentMessageId())[0];
 const 原文 = M ? (M.message || '') : '';
 const 取 = (名) => {
@@ -40,54 +134,6 @@ const 取 = (名) => {
   if (res.includes('<聊天')) res = res.replace(/<\/?聊天[^>]*>/g, '');
   return res;
 };
-// ★★★ 属性解析 —— 只用字符串操作，不用正则
-//   ★ 为什么：这里有 Python→文件→浏览器 三层转义，
-//     正则字面量里的 \s 会在某一层被吃掉或加倍，极难排查
-//   ★★ 改用 indexOf/slice 之后，没有任何转义问题
-const 拆属性 = (串) => {
-  const 出 = {};
-  let i = 0;
-  while (i < 串.length) {
-    const 等 = 串.indexOf('=', i);
-    if (等 < 0) break;
-    const 键 = 串.slice(i, 等).trim().replace(/^["'\s]+/, '');
-    let 起 = 等 + 1;
-    while (起 < 串.length && 串[起] === ' ') 起++;
-    let 值 = '';
-    if (串[起] === '"' || 串[起] === "'") {
-      const 引 = 串[起];
-      const 闭 = 串.indexOf(引, 起 + 1);
-      值 = 串.slice(起 + 1, 闭 < 0 ? 串.length : 闭);
-      i = (闭 < 0 ? 串.length : 闭) + 1;
-    } else {
-      const 空 = 串.indexOf(' ', 起);
-      值 = 串.slice(起, 空 < 0 ? 串.length : 空);
-      i = 空 < 0 ? 串.length : 空 + 1;
-    }
-    if (键) 出[键] = 值;
-  }
-  return 出;
-};
-
-const 属性 = (名) => {
-  const i = 原文.indexOf('<' + 名);
-  if (i < 0) return '';
-  const j = 原文.indexOf('>', i);
-  if (j < 0) return '';
-  return 原文.slice(i + 名.length + 1, j).trim();
-};
-
-// ★ 取属性的【值】—— 不是整串
-//   ★ 踩过：原来 属性('聊天') 返回 `平台="微信"`，标题就显示这个
-//   ★★ 现在 取值('聊天') 返回 `微信`
-const 取值 = (名, key) => {
-  const 串 = 属性(名);
-  if (!串) return '';
-  if (key) return 拆属性(串)[key] || '';
-  const 全 = 拆属性(串);
-  const 键 = Object.keys(全);
-  return 键.length ? 全[键[0]] : 串;
-};
 
 const 转义 = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
@@ -97,37 +143,27 @@ document.getElementById('clock').textContent =
 
 const raw = 取('phone');
 const c = document.getElementById('c');
-// ★ 手机里的内容按行处理，保留结构，但把「搜索/消息/已加入」这类标记美化
 const 行 = raw.split('\n');
-for (const 一 of 行) {
-  if (!一.trim()) { c.appendChild(document.createElement('div')).style.height = '7px'; continue; }
-  const d = document.createElement('div');
-  let s = 转义(一);
 
-  if (/^[🔍📌⚙️🔔👤📁]/.test(一.trim())) {
-    // 分类标题
-    d.style.cssText = 'margin:11px 0 6px;font-size:12px;color:var(--c-info);letter-spacing:.05em;font-weight:500';
-    d.innerHTML = s;
-  } else if (/^【.*】/.test(一.trim())) {
-    // 条目
-    d.className = 'dsh-key';
-    d.style.margin = '5px 0';
-    d.innerHTML = s;
-  } else if (/已加入|✔|成功|通过/.test(一)) {
-    d.className = 'dsh-tag good';
-    d.style.margin = '7px 0';
-    d.innerHTML = s;
-  } else if (/⚠|需|无法|禁止|拒绝/.test(一)) {
-    d.className = 'dsh-tag warn';
-    d.style.margin = '7px 0';
-    d.innerHTML = s;
+for (const 一 of 行) {
+  const s = 一.trim();
+  if (!s) continue;
+  const d = document.createElement('div');
+  d.className = 'phone-item';
+  
+  if (/^📱|底层穿透|硬件/.test(s)) {
+    d.className += ' primary';
+    d.innerHTML = '<strong>' + 转义(s) + '</strong>';
+  } else if (/^⚡|雷达|发现/.test(s)) {
+    d.className += ' radar';
+    d.innerHTML = '⚡ ' + 转义(s.replace(/^⚡\s*/, ''));
+  } else if (/^●|已自动|越权/.test(s)) {
+    d.innerHTML = '<span style="color:#a78bfa;margin-right:4px">●</span>' + 转义(s.replace(/^●\s*/, ''));
   } else {
-    d.style.cssText = 'margin:3px 0;color:var(--t-2);line-height:1.8';
-    d.innerHTML = s;
+    d.innerHTML = 转义(s);
   }
   c.appendChild(d);
 }
-
 </script>
 </body>
 </html>

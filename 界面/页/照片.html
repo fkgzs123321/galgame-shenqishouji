@@ -5,103 +5,160 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>照片</title>
 <link rel="stylesheet" href="https://testingcf.jsdelivr.net/gh/fkgzs123321/galgame-shenqishouji@main/界面/_共用/base.css">
+<style>
+  .photo-card {
+    max-width: 440px;
+    margin: 12px auto;
+    background: #0d0a11;
+    border-radius: 20px;
+    border: 1px solid rgba(244, 63, 94, 0.25);
+    box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(244, 63, 94, 0.15);
+    overflow: hidden;
+  }
+  .photo-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: rgba(244, 63, 94, 0.08);
+    border-bottom: 1px solid rgba(244, 63, 94, 0.15);
+  }
+  .photo-icon {
+    font-size: 13px;
+  }
+  .photo-title {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #fda4af;
+    letter-spacing: 0.04em;
+    flex: 1;
+  }
+  .photo-tag-badge {
+    font-size: 10px;
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    padding: 1px 7px;
+    border-radius: 999px;
+  }
+  .photo-content {
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 8px 10px;
+    font-size: 11px;
+    color: #8e889e;
+  }
+  .meta-val {
+    color: #fff;
+    font-weight: 500;
+  }
+  .detail-quote {
+    position: relative;
+    padding: 10px 14px;
+    background: rgba(244, 63, 94, 0.05);
+    border-left: 2px solid #f43f5e;
+    border-radius: 6px;
+    font-size: 13px;
+    line-height: 1.8;
+    color: #fce7f3;
+  }
+  .photo-caption {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px dashed rgba(244, 63, 94, 0.3);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12.5px;
+    color: #fb7185;
+    font-style: italic;
+  }
+</style>
 </head>
-<body style="--hue:340">
-<div class="dsh-card" style="--hue:340">
-  <div class="dsh-hd">
-    <div class="dsh-hd-ico">📷</div>
-    <div class="dsh-hd-t">她发来一张照片</div>
-    <div class="dsh-hd-sub" id="t">刚刚</div>
+<body>
+<div class="photo-card">
+  <div class="photo-header">
+    <span class="photo-icon">📸</span>
+    <span class="photo-title">密聊实时抓拍 (已解密)</span>
+    <span class="photo-tag-badge">● 真人实时在场</span>
   </div>
-  <div class="dsh-bd p0">
-    <div style="position:relative;padding:17px 16px;background:linear-gradient(160deg,#1a1219,#120e15);min-height:90px">
-      <div style="position:absolute;inset:0;background:radial-gradient(circle at 28% 22%,rgba(255,77,109,.09),transparent 62%)"></div>
-      <div id="c" style="position:relative;color:#e6dce4;font-size:13.5px;line-height:2;font-family:'Noto Serif SC',serif"></div>
-    </div>
-    <div style="padding:9px 15px;border-top:1px solid #2a1f28;display:flex;gap:7px;align-items:center">
-      <span class="dsh-tag" style="background:rgba(255,77,109,.1);border-color:rgba(255,77,109,.3);color:var(--c-hot-2)">未见过真人</span>
-      <span class="dsh-mono" style="flex:1">可能经过美化 · 手机可验证</span>
-    </div>
-  </div>
+  <div class="photo-content" id="c"></div>
 </div>
 <script>
-
 const M = getChatMessages(getCurrentMessageId())[0];
 const 原文 = M ? (M.message || '') : '';
 const 取 = (名) => {
-  const re = new RegExp('<' + 名 + '(?:\\s[^>]*)?>([\\s\\S]*?)</' + 名 + '>');
-  const m = 原文.match(re);
-  return m ? m[1].trim() : '';
-};
-// ★★★ 属性解析 —— 只用字符串操作，不用正则
-//   ★ 为什么：这里有 Python→文件→浏览器 三层转义，
-//     正则字面量里的 \s 会在某一层被吃掉或加倍，极难排查
-//   ★★ 改用 indexOf/slice 之后，没有任何转义问题
-const 拆属性 = (串) => {
-  const 出 = {};
-  let i = 0;
-  while (i < 串.length) {
-    const 等 = 串.indexOf('=', i);
-    if (等 < 0) break;
-    const 键 = 串.slice(i, 等).trim().replace(/^["'\s]+/, '');
-    let 起 = 等 + 1;
-    while (起 < 串.length && 串[起] === ' ') 起++;
-    let 值 = '';
-    if (串[起] === '"' || 串[起] === "'") {
-      const 引 = 串[起];
-      const 闭 = 串.indexOf(引, 起 + 1);
-      值 = 串.slice(起 + 1, 闭 < 0 ? 串.length : 闭);
-      i = (闭 < 0 ? 串.length : 闭) + 1;
-    } else {
-      const 空 = 串.indexOf(' ', 起);
-      值 = 串.slice(起, 空 < 0 ? 串.length : 空);
-      i = 空 < 0 ? 串.length : 空 + 1;
+  let myIndex = 0;
+  try {
+    const fe = window.frameElement;
+    if (fe) {
+      const parent = fe.closest ? fe.closest('.mes_text') : fe.parentElement;
+      if (parent) {
+        const iframes = Array.from(parent.querySelectorAll('iframe'));
+        const same = iframes.filter(f => f === fe || f.src === fe.src);
+        const found = same.indexOf(fe);
+        if (found >= 0) myIndex = found;
+      }
     }
-    if (键) 出[键] = 值;
-  }
-  return 出;
-};
-
-const 属性 = (名) => {
-  const i = 原文.indexOf('<' + 名);
-  if (i < 0) return '';
-  const j = 原文.indexOf('>', i);
-  if (j < 0) return '';
-  return 原文.slice(i + 名.length + 1, j).trim();
-};
-
-// ★ 取属性的【值】—— 不是整串
-//   ★ 踩过：原来 属性('聊天') 返回 `平台="微信"`，标题就显示这个
-//   ★★ 现在 取值('聊天') 返回 `微信`
-const 取值 = (名, key) => {
-  const 串 = 属性(名);
-  if (!串) return '';
-  if (key) return 拆属性(串)[key] || '';
-  const 全 = 拆属性(串);
-  const 键 = Object.keys(全);
-  return 键.length ? 全[键[0]] : 串;
+  } catch (e) {}
+  const allMatches = Array.from(原文.matchAll(new RegExp('<' + 名 + '(?:\\s[^>]*)?>([\\s\\S]*?)</' + 名 + '>', 'g')));
+  const m = allMatches[myIndex] || allMatches[0];
+  return m ? m[1].trim() : '';
 };
 
 const 转义 = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 const raw = 取('照片');
 const c = document.getElementById('c');
-for (const 一 of raw.split('\n')) {
-  const s = 一.trim();
-  if (!s) { c.insertAdjacentHTML('beforeend', '<div style="height:6px"></div>'); continue; }
-  const d = document.createElement('div');
-  // ★ 「脸不在画面里」「内裤勒进去了」这类关键点要突出
-  if (/脸不在|没露脸|看不到脸|勒|湿|水痕|肿|硬/.test(s)) {
-    d.innerHTML = `<span style="color:#ffb3c1;border-bottom:1px dashed rgba(255,77,109,.5)">${转义(s)}</span>`;
-  } else if (/^★/.test(s)) {
-    d.style.cssText = 'color:var(--c-warn);font-family:\'Noto Sans SC\';font-size:12.5px';
-    d.textContent = s;
-  } else {
-    d.textContent = s;
+const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+
+let details = [];
+let metas = [];
+let caption = '';
+
+for (const l of lines) {
+  if (l.startsWith('配文：') || l.startsWith('「')) {
+    caption = l;
+  } else if (l.includes('：') && (l.startsWith('距离') || l.startsWith('目标') || l.startsWith('状态') || l.startsWith('对象'))) {
+    metas.push(l);
+  } else if (!l.startsWith('📸')) {
+    details.push(l);
   }
-  c.appendChild(d);
 }
 
+if (metas.length) {
+  const g = document.createElement('div');
+  g.className = 'meta-grid';
+  for (const m of metas) {
+    const p = m.split('：');
+    const row = document.createElement('div');
+    row.innerHTML = `<span>${转义(p[0])}：</span><span class="meta-val">${转义(p.slice(1).join('：'))}</span>`;
+    g.appendChild(row);
+  }
+  c.appendChild(g);
+}
+
+if (details.length) {
+  const q = document.createElement('div');
+  q.className = 'detail-quote';
+  q.innerHTML = details.map(d => 转义(d)).join('<br>');
+  c.appendChild(q);
+}
+
+if (caption) {
+  const cap = document.createElement('div');
+  cap.className = 'photo-caption';
+  cap.innerHTML = '💬 ' + 转义(caption);
+  c.appendChild(cap);
+}
 </script>
 </body>
 </html>
