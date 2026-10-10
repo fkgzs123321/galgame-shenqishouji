@@ -21,9 +21,24 @@
 const M = getChatMessages(getCurrentMessageId())[0];
 const 原文 = M ? (M.message || '') : '';
 const 取 = (名) => {
-  const re = new RegExp('<' + 名 + '(?:\\s[^>]*)?>([\\s\\S]*?)</' + 名 + '>');
-  const m = 原文.match(re);
-  return m ? m[1].trim() : '';
+  let myIndex = 0;
+  try {
+    const fe = window.frameElement;
+    if (fe) {
+      const parent = fe.closest ? fe.closest('.mes_text') : fe.parentElement;
+      if (parent) {
+        const iframes = Array.from(parent.querySelectorAll('iframe'));
+        const same = iframes.filter(f => f === fe || f.src === fe.src);
+        const found = same.indexOf(fe);
+        if (found >= 0) myIndex = found;
+      }
+    }
+  } catch (e) {}
+  const allMatches = Array.from(原文.matchAll(new RegExp('<' + 名 + '(?:\\s[^>]*)?>([\\s\\S]*?)</' + 名 + '>', 'g')));
+  const m = allMatches[myIndex] || allMatches[0];
+  let res = m ? m[1].trim() : '';
+  if (res.includes('<聊天')) res = res.replace(/<\/?聊天[^>]*>/g, '');
+  return res;
 };
 // ★★★ 属性解析 —— 只用字符串操作，不用正则
 //   ★ 为什么：这里有 Python→文件→浏览器 三层转义，
