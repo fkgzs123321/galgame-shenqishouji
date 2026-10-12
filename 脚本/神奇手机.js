@@ -2096,8 +2096,52 @@
   function commFilterKind() { return state.comm.filter === 'contact' || state.comm.filter === 'group' || state.comm.filter === 'post' ? state.comm.filter : 'all'; }
   
   // ==========================================
-  // ★★★ PHANTOM OS 2025 EXTENSIONS ★★★
+  // ★★★ PHANTOM OS 2025 DEEP GAME SYSTEMS ★★★
   // ==========================================
+
+  function getMvuDataSafe() {
+    try {
+      if (typeof Mvu !== 'undefined' && Mvu && typeof Mvu.getMvuData === 'function') {
+        var d = Mvu.getMvuData({ type: 'message', message_id: 'latest' });
+        return (d && d.stat_data) ? d.stat_data : d;
+      }
+      var p = (typeof window !== 'undefined' && window.parent && window.parent !== window) ? window.parent : null;
+      if (p && p.Mvu && typeof p.Mvu.getMvuData === 'function') {
+        var d2 = p.Mvu.getMvuData({ type: 'message', message_id: 'latest' });
+        return (d2 && d2.stat_data) ? d2.stat_data : d2;
+      }
+    } catch (e) {
+      console.warn('[神奇手机] 读取 Mvu 异常', e);
+    }
+    return null;
+  }
+
+  // Sync Phone Level and Status Indicators from live Mvu variables
+  function syncPhoneStatusFromVars() {
+    var statData = getMvuDataSafe();
+    if (!statData) return;
+
+    var level = 1;
+    if (statData.手机 && statData.手机.等级 != null) {
+      level = Number(statData.手机.等级);
+    }
+
+    var pill = q('[data-phone-level]', state.nodes.overlay);
+    if (pill) pill.textContent = 'Lv.' + level;
+
+    // Update Privilege Matrix in Settings
+    var ladderItems = qa('.pt-ladder-item', state.nodes.overlay);
+    var ladderLevels = [10, 20, 30, 40, 50, 60, 70, 80];
+    ladderItems.forEach(function (item, idx) {
+      var reqLvl = ladderLevels[idx] || 10;
+      var isUnlocked = (level >= reqLvl);
+      item.className = 'pt-ladder-item ' + (isUnlocked ? 'unlocked' : 'locked');
+      var statusSpan = item.lastElementChild;
+      if (statusSpan) {
+        statusSpan.textContent = isUnlocked ? '[🟢 已激活]' : '[🔒 需 Lv.' + reqLvl + ']';
+      }
+    });
+  }
 
   // 1. Render Radar Targets with Biological Scent, Vulva Pathology, STD, and Traps
   function renderRadarTargets() {
@@ -2105,12 +2149,31 @@
     if (!container) return;
     container.innerHTML = '';
 
-    // Sample/Current targets from state or variables
+    syncPhoneStatusFromVars();
+    var statData = getMvuDataSafe();
     var targets = [];
+
+    // 1. Try reading from stat_data.人物
+    if (statData && statData.人物) {
+      var rawChars = statData.人物;
+      if (Array.isArray(rawChars)) {
+        targets = targets.concat(rawChars);
+      } else if (typeof rawChars === 'object') {
+        targets = targets.concat(Object.values(rawChars));
+      }
+    }
+
+    // 2. Also merge with any phone contacts
     if (state.comm.contacts && state.comm.contacts.length > 0) {
-      targets = state.comm.contacts;
-    } else {
-      // Default / story detected targets
+      state.comm.contacts.forEach(function (c) {
+        if (!targets.some(function (t) { return (t.name || t.姓名) === c.name; })) {
+          targets.push(c);
+        }
+      });
+    }
+
+    // 3. Fallback initial scene targets if nothing is tracked yet
+    if (targets.length === 0) {
       targets = [
         {
           name: '苏曼 (探探捕获 · 1.2km)',
@@ -2136,48 +2199,130 @@
     }
 
     targets.forEach(function (t) {
+      var charName = t.name || t.姓名 || (t.基本 && t.基本.姓名) || (t.外貌 && t.外貌.姓名) || '未知目标';
+      var sourcePlatform = t.source || t.平台 || (t.背景 && t.背景.原型) || '地下链路';
+      
+      // Biological features mapping from generator / schema
+      var scent = t.scent || (t.外貌 && t.外貌.味道) || (t.扩展 && t.扩展.生理体味) || (t.身体 && t.身体.味道) || '真实汗骚与微酸体温';
+      var vulva = t.vulva || (t.外貌 && t.外貌.阴部) || (t.扩展 && t.扩展.下体病理) || (t.身体 && t.身体.阴部形态) || '正常粉褐潮润';
+      
+      var rawStd = t.std || (t.扩展 && t.扩展.性病携带);
+      var std = typeof rawStd === 'string' ? rawStd : (rawStd && rawStd.类型) ? rawStd.类型 : '全项阴性 (健康)';
+      
+      var rawTrap = t.trap || (t.扩展 && t.扩展.陷阱设局);
+      var trap = '';
+      if (typeof rawTrap === 'string') {
+        trap = rawTrap;
+      } else if (rawTrap && rawTrap.类型) {
+        trap = '⚠️ ' + rawTrap.类型 + ' (' + (rawTrap.详情 || '') + ' · 战力 ' + (rawTrap.战力 || 5) + ')';
+      }
+
+      var rawPreg = t.pregnancy || (t.扩展 && t.扩展.生育实况);
+      var preg = typeof rawPreg === 'string' ? rawPreg : (rawPreg && rawPreg.状态) ? rawPreg.状态 : '未显怀';
+      
+      var isDanger = Boolean(t.danger || trap || (vulva && (vulva.indexOf('疱疹') !== -1 || vulva.indexOf('湿疣') !== -1 || vulva.indexOf('溃疡') !== -1)));
+
       var card = make('div');
-      card.className = 'pt-target-card' + (t.danger ? ' danger' : '');
+      card.className = 'pt-target-card' + (isDanger ? ' danger' : '');
       var head = make('div');
       head.className = 'pt-target-head';
-      head.innerHTML = '<span class="pt-target-name">🎯 ' + text(t.name) + '</span><span class="pt-target-source">' + text(t.source || '地下链路') + '</span>';
+      head.innerHTML = '<span class="pt-target-name">🎯 ' + text(charName) + '</span><span class="pt-target-source">' + text(sourcePlatform) + '</span>';
       card.appendChild(head);
 
       var grid = make('div');
       grid.className = 'pt-bio-grid';
       grid.innerHTML = 
-        '<div class="pt-bio-item"><span class="pt-bio-label">🩺 生理体味</span><span class="pt-bio-val">' + text(t.scent || '真实汗骚与体温') + '</span></div>' +
-        '<div class="pt-bio-item"><span class="pt-bio-label">🔍 下体病理</span><span class="pt-bio-val ' + (t.vulva && t.vulva.includes('疹') ? 'danger' : 'ok') + '">' + text(t.vulva || '正常潮润') + '</span></div>' +
-        '<div class="pt-bio-item"><span class="pt-bio-label">⚠️ 性病潜伏</span><span class="pt-bio-val ' + (t.std && t.std.includes('潜伏') ? 'danger' : 'ok') + '">' + text(t.std || '未检出') + '</span></div>' +
-        '<div class="pt-bio-item"><span class="pt-bio-label">🍼 孕产实况</span><span class="pt-bio-val alert">' + text(t.pregnancy || '无胚胎') + '</span></div>';
+        '<div class="pt-bio-item"><span class="pt-bio-label">🩺 生理体味</span><span class="pt-bio-val">' + text(scent) + '</span></div>' +
+        '<div class="pt-bio-item"><span class="pt-bio-label">🔍 下体病理</span><span class="pt-bio-val ' + (vulva.indexOf('疹') !== -1 || vulva.indexOf('疣') !== -1 ? 'danger' : 'ok') + '">' + text(vulva) + '</span></div>' +
+        '<div class="pt-bio-item"><span class="pt-bio-label">⚠️ 性病潜伏</span><span class="pt-bio-val ' + (std.indexOf('阳性') !== -1 || std.indexOf('HPV') !== -1 || std.indexOf('疱疹') !== -1 ? 'danger' : 'ok') + '">' + text(std) + '</span></div>' +
+        '<div class="pt-bio-item"><span class="pt-bio-label">🍼 孕产实况</span><span class="pt-bio-val alert">' + text(preg) + '</span></div>';
       card.appendChild(grid);
 
-      if (t.trap) {
-        var trap = make('div');
-        trap.className = 'pt-trap-banner';
-        trap.textContent = t.trap;
-        card.appendChild(trap);
+      if (trap) {
+        var trapDiv = make('div');
+        trapDiv.className = 'pt-trap-banner';
+        trapDiv.textContent = trap;
+        card.appendChild(trapDiv);
       }
 
       var actionRow = make('div');
       actionRow.style.cssText = 'display:flex;gap:8px;margin-top:6px;';
+      
       var chatBtn = make('button');
       chatBtn.type = 'button';
       chatBtn.className = 'pt-btn primary';
       chatBtn.style.cssText = 'flex:1;background:linear-gradient(135deg,#00b4d8,#0077b6);color:#fff;border:none;padding:6px;border-radius:8px;font-size:11.5px;cursor:pointer;';
-      chatBtn.textContent = '📱 开启私密监听';
+      chatBtn.textContent = '📱 接入私密监听';
       chatBtn.onclick = function () {
+        var existing = state.comm.contacts.find(function(c) { return c.name === charName; });
+        if (!existing) {
+          var newId = 'c_' + Date.now();
+          state.comm.contacts.unshift({
+            id: newId,
+            name: charName,
+            source: sourcePlatform,
+            entries: [],
+            created: Date.now()
+          });
+          existing = state.comm.contacts[0];
+          persistSettings();
+        }
         setCommFilter('all');
-        if (t.id) openContact(t.id);
+        openContact(existing.id);
       };
       actionRow.appendChild(chatBtn);
+
+      var dossierBtn = make('button');
+      dossierBtn.type = 'button';
+      dossierBtn.className = 'pt-btn';
+      dossierBtn.style.cssText = 'flex:1;background:rgba(179,136,255,0.15);color:#d1c4e9;border:1px solid #b388ff;padding:6px;border-radius:8px;font-size:11.5px;cursor:pointer;';
+      dossierBtn.textContent = '📂 调取私密档案';
+      dossierBtn.onclick = function () {
+        setCommFilter('dossier');
+        renderDossierFor(charName, t);
+      };
+      actionRow.appendChild(dossierBtn);
 
       card.appendChild(actionRow);
       container.appendChild(card);
     });
   }
 
-  // 2. Draft Peeking Functionality
+  // 2. Render Dossier Details with Five Secret Elements & Dual Race Simulation
+  function renderDossierFor(name, data) {
+    var box = q('[data-dossier-content]', state.nodes.overlay);
+    if (!box) return;
+    var bg = data.背景 || {};
+    var ext = data.扩展 || {};
+    var sex = data.性 || {};
+    
+    var family = bg.家庭 || '离异单身 / 租房独居';
+    var finance = bg.经济 || '信用卡透支 / 欠网贷 8.5 万元';
+    var conflict = bg.冲突 || '被原配威胁 / 资金链断裂随时跑路';
+    var weakness = (sex.禁区 && Array.isArray(sex.禁区)) ? sex.禁区.join(' · ') : (data.禁区 || '怕单位知道 / 极度在意亲人名誉');
+    var marriage = bg.处境 || '分居冷战 / 丈夫常年出差不在家';
+
+    box.innerHTML = 
+      '<div style="display:flex;flex-direction:column;gap:6px">' +
+      '<div><strong style="color:#f1f5f9">🎯 目标档案：</strong>' + text(name) + '</div>' +
+      '<div><span style="color:#94a3b8">1. 家庭与社会关系：</span>' + text(family) + '</div>' +
+      '<div><span style="color:#94a3b8">2. 隐秘生理/心理弱点：</span>' + text(weakness) + '</div>' +
+      '<div><span style="color:#94a3b8">3. 婚姻破裂与感情现状：</span>' + text(marriage) + '</div>' +
+      '<div><span style="color:#94a3b8">4. 财务危机与资金缺口：</span><span style="color:#ffab00">' + text(finance) + '</span></div>' +
+      '<div><span style="color:#94a3b8">5. 致命把柄与封口凭据：</span><span style="color:#ff3366">' + text(conflict) + '</span></div>' +
+      '</div>';
+
+    var raceDis = q('[data-race-disease]', state.nodes.overlay);
+    if (raceDis) {
+      raceDis.textContent = (ext.性病携带) ? text(typeof ext.性病携带 === 'string' ? ext.性病携带 : ext.性病携带.类型) : '双盲低风险 · 阻断窗口期剩 48h';
+    }
+    var racePreg = q('[data-race-pregnancy]', state.nodes.overlay);
+    if (racePreg) {
+      racePreg.textContent = (ext.生育实况) ? text(typeof ext.生育实况 === 'string' ? ext.生育实况 : ext.生育实况.状态) : '安全期第 5 天 · 胚胎受精概率 12%';
+    }
+  }
+
+  // 3. Draft Peeking Functionality
   function setupDraftPeeking() {
     var btn = q('[data-draft-peek]', state.nodes.overlay);
     var box = q('[data-draft-box]', state.nodes.overlay);
@@ -2189,19 +2334,21 @@
       if (!box.hidden) {
         txt.textContent = '● 正在破译对方手机键盘缓冲区...';
         setTimeout(function () {
+          var contact = contactById(state.comm.contactId);
+          var contactName = contact ? contact.name : '对方';
           var drafts = [
-            '“你到底想怎么样……我老公晚上就回来了，要是被他发现我们……”（已删除未发送）',
-            '“昨天在酒店不是说好给两万吗？怎么只转了一万二？你再不补齐我就去你单位……”（停留于输入框，犹豫未发）',
-            '“其实我今天没穿内裤，一直在等你电话……”（写了又删，光标停留在句末）',
-            '“别催了，打手已经在楼梯间埋伏好了，你等会儿直接进房间就行……”（暗网TG草稿截获）'
+            '“' + contactName + '在输入框写道：你到底想怎么样……我老公晚上就回来了，要是被他发现我们……”（已删除未发送）',
+            '“' + contactName + '停留于输入框：昨天在酒店不是说好给两万吗？怎么只转了一万二？你再不补齐我就去你单位……”（犹豫未发）',
+            '“' + contactName + '写了又删：其实我今天没穿内裤，一直在等你电话……”（光标停留在句末）',
+            '“' + contactName + '暗网草稿：别催了，打手已经在楼梯间埋伏好了，你等会儿直接进房间就行……”（设局草稿截获）'
           ];
           txt.textContent = drafts[Math.floor(Math.random() * drafts.length)];
-        }, 600);
+        }, 500);
       }
     };
   }
 
-  // 3. Platform Click Handlers
+  // 4. Platform Click Handlers
   function setupPlatformCards() {
     qa('.pt-platform-card', state.nodes.overlay).forEach(function (card) {
       card.onclick = function () {
@@ -2213,6 +2360,17 @@
         }
       };
     });
+
+    var falsifyBtn = q('[data-falsify-dna]', state.nodes.overlay);
+    if (falsifyBtn) {
+      falsifyBtn.onclick = function () {
+        if (typeof toastr !== 'undefined') {
+          toastr.success('【因果律干预生效】已通过手机 Lv.50 特权，在三甲医院检验科数据库完成覆写，亲子排除概率置为 99.999%！');
+        } else {
+          alert('【因果律干预生效】已通过手机 Lv.50 特权，在三甲医院检验科数据库完成覆写，亲子排除概率置为 99.999%！');
+        }
+      };
+    }
   }
 
 function setCommFilter(kind) {
@@ -2236,6 +2394,7 @@ function setCommFilter(kind) {
     if (dossierPanel) dossierPanel.hidden = (kind !== 'dossier');
 
     if (kind === 'settings') {
+      syncPhoneStatusFromVars();
       if (settingsApp) { settingsApp.style.display = 'flex'; settingsApp.removeAttribute('inert'); settingsApp.setAttribute('aria-hidden', 'false'); }
       if (commApp) { commApp.style.display = 'none'; commApp.setAttribute('aria-hidden', 'true'); }
     } else {
@@ -6952,7 +7111,7 @@ function createPctVoiceEngine({ host, vendor, request, getSettings, log }) {
     }
     if (state.nodes.trigger) {
       state.nodes.trigger.textContent = live ? '📞' : '📱';
-      state.nodes.setupDraftPeeking(); setupPlatformCards(); trigger.setAttribute('aria-label', live ? (call.continuous ? '连麦中，返回通话' : '通话中，返回通话') : '打开通讯终端');
+      state.nodes.setupDraftPeeking(); setupPlatformCards(); syncPhoneStatusFromVars(); trigger.setAttribute('aria-label', live ? (call.continuous ? '连麦中，返回通话' : '通话中，返回通话') : '打开通讯终端');
     }
   }
   function showVoiceCall() {
