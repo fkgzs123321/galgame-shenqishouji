@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>相册</title>
+<link rel="stylesheet" href="https://testingcf.jsdelivr.net/gh/fkgzs123321/galgame-shenqishouji@main/界面/_共用/base.css">
+<style>
+  #bar{display:flex;gap:6px;align-items:center;padding:9px 15px;border-bottom:1px solid var(--line);
+    flex-wrap:wrap;background:rgba(255,255,255,.015)}
+  .chip{font-size:11px;padding:2px 10px;border-radius:var(--r-pill);cursor:pointer;user-select:none;
+    color:var(--t-3);border:1px solid var(--line);background:transparent;transition:.15s}
+  .chip:hover{color:var(--t-1);border-color:var(--accent)}
+  .chip.on{color:var(--t-1);border-color:var(--accent);background:rgba(255,255,255,.06)}
+  #bar .sp{flex:1}
+  #bar .hint{font-size:10.5px;color:var(--t-4)}
+  .grp{padding:11px 15px 3px;font-size:11px;color:var(--t-3);letter-spacing:.06em;
+    display:flex;align-items:center;gap:7px}
+  .grp::after{content:'';flex:1;height:1px;background:var(--line)}
+  #grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px;padding:8px 15px 15px}
+  .ph{position:relative;aspect-ratio:1/1;border-radius:var(--r-md);overflow:hidden;cursor:pointer;
+    border:1px solid var(--line);background:var(--bg-2);display:flex;flex-direction:column;
+    justify-content:flex-end;transition:.15s}
+  .ph:hover{border-color:var(--accent);transform:translateY(-1px)}
+  .ph .ico{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-size:26px;opacity:.32}
+  .ph .cap{position:relative;padding:6px 7px;font-size:10.5px;line-height:1.45;color:var(--t-1);
+    background:linear-gradient(to top,rgba(0,0,0,.86),rgba(0,0,0,0))}
+  .ph .who{display:block;color:var(--t-3);font-size:9.5px;margin-top:1px}
+  .ph .t{position:absolute;top:6px;left:7px;font-size:9.5px;padding:1px 6px;
+    border-radius:var(--r-pill);background:rgba(0,0,0,.55);color:var(--t-2)}
+  .empty{padding:26px 15px;text-align:center;color:var(--t-3);font-size:12.5px;line-height:2}
+  #ov{position:fixed;inset:0;z-index:99;display:none;padding:16px;overflow:auto;
+    background:rgba(6,4,9,.9);backdrop-filter:blur(3px)}
+  #ov.on{display:block}
+  #ovc{max-width:430px;margin:6px auto;background:var(--bg-1);border:1px solid var(--line);
+    border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--glass-card)}
+  #ovh{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line)}
+  #ovh .who{font-size:12.5px;font-weight:600;color:var(--t-1);flex:1}
+  #ovh .x{cursor:pointer;color:var(--t-3);font-size:15px;padding:0 3px}
+  #ovh .x:hover{color:var(--t-1)}
+  .big{aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;font-size:46px;
+    background:var(--bg-2);border-bottom:1px solid var(--line);opacity:.6}
+  #ovb{padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+  .meta{display:grid;grid-template-columns:1fr 1fr;gap:5px;font-size:11px;color:var(--t-3);
+    background:rgba(255,255,255,.025);border:1px solid var(--line);border-radius:var(--r-sm);padding:8px 10px}
+  .meta b{color:var(--t-1);font-weight:500}
+  .desc{font-size:12.5px;line-height:1.85;color:var(--t-1);white-space:pre-wrap}
+  .del{font-size:11px;color:var(--t-4);border-top:1px dashed var(--line);padding-top:8px;line-height:1.7}
+</style>
+</head>
+<body style="--hue:285">
+<div class="dsh-card">
+  <div class="dsh-hd">
+    <div class="dsh-hd-ico">📸</div>
+    <div class="dsh-hd-t" id="t">相册</div>
+    <div class="dsh-hd-sub" id="n">—</div>
+  </div>
+  <div id="bar">
+    <span class="chip on" data-g="时间">按时间</span>
+    <span class="chip" data-g="对象">按对象</span>
+    <span class="chip" data-g="地点">按地点</span>
+    <span class="sp"></span>
+    <span class="hint">只读 · 删除请对手机说</span>
+  </div>
+  <div class="dsh-bd p0" id="l"></div>
+</div>
+
+<div id="ov"><div id="ovc">
+  <div id="ovh"><span class="who" id="ovn"></span><span class="x" id="ovx">✕</span></div>
+  <div class="big" id="ovi">🖼</div>
+  <div id="ovb"><div class="meta" id="ovm"></div><div class="desc" id="ovd"></div><div class="del" id="ovz"></div></div>
+</div></div>
+
+<script>
+const 启动 = () => {
+
+const M = getChatMessages(getCurrentMessageId())[0];
+const 原文 = M ? (M.message || '') : '';
+
+// ★★★ 属性解析 —— 只用字符串操作
+//   ★ 为什么：Python→文件→浏览器 三层转义会把正则里的 \s 弄坏
+const 拆属性 = (串) => {
+  const 出 = {};
+  let i = 0;
+  while (i < 串.length) {
+    const 等 = 串.indexOf('=', i);
+    if (等 < 0) break;
+    const 键 = 串.slice(i, 等).trim().split(' ').pop().replace(/["']/g, '');
+    let 起 = 等 + 1;
+    while (起 < 串.length && 串[起] === ' ') 起++;
+    let 值 = '';
+    if (串[起] === '"' || 串[起] === "'") {
+      const 引 = 串[起];
+      const 闭 = 串.indexOf(引, 起 + 1);
+      值 = 串.slice(起 + 1, 闭 < 0 ? 串.length : 闭);
+      i = (闭 < 0 ? 串.length : 闭) + 1;
+    } else {
+      const 空 = 串.indexOf(' ', 起);
+      值 = 串.slice(起, 空 < 0 ? 串.length : 空);
+      i = 空 < 0 ? 串.length : 空 + 1;
+    }
+    if (键) 出[键] = 值;
+  }
+  return 出;
+};
+
+const 转义 = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+// ★ 扫出所有 <拍摄 …>正文</拍摄>（用 indexOf/slice，不碰正则转义）
+const 扫拍摄 = () => {
+  const 出 = [];
+  const 名 = '拍摄';
+  let i = 0;
+  while (true) {
+    const a = 原文.indexOf('<' + 名, i);
+    if (a < 0) break;
+    const b = 原文.indexOf('>', a);
+    if (b < 0) break;
+    const 闭 = 原文.indexOf('</' + 名 + '>', b);
+    const attrs = 拆属性(原文.slice(a + 名.length + 1, b));
+    const 描述 = 原文.slice(b + 1, 闭 < 0 ? 原文.length : 闭).trim();
+    if (attrs['对象'] || 描述) {
+      出.push({
+        id: attrs['id'] || (attrs['时间'] || '') + '#' + 出.length,
+        对象: attrs['对象'] || '无人',
+        时间: attrs['时间'] || '',
+        地点: attrs['地点'] || '',
+        描述: 描述,
+        照片引用: attrs['引用'] || attrs['类型'] || '',
+      });
+    }
+    i = 闭 < 0 ? 原文.length : 闭 + 名.length + 3;
+    if (闭 < 0) break;
+  }
+  return 出;
+};
+
+let 记录 = 扫拍摄();
+let 分组 = '时间';
+let 来源 = 记录.length ? '正文' : '空';
+
+// ★★★ MVU（手机.相册）—— 内联页只读，取不到就退回正文
+//   ★★ 注意：schema.ts 未声明 手机.相册，zod 会把未知键剥掉，
+//      所以这里【必须】容忍它不存在，不能让页面因此空白
+const 拉MVU = () => {
+  try {
+    if (typeof Mvu === 'undefined' || !Mvu.getMvuData) return false;
+    const d = Mvu.getMvuData({ type: 'message', message_id: getCurrentMessageId() });
+    const a = d && d.stat_data && d.stat_data['手机'] && d.stat_data['手机']['相册'];
+    if (Array.isArray(a) && a.length) {
+      记录 = a.map((x, k) => ({
+        id: x.id || ('m' + k),
+        对象: x['对象'] || '无人',
+        时间: x['时间'] || '',
+        地点: x['地点'] || '',
+        描述: x['描述'] || '',
+        照片引用: x['照片引用'] || '',
+      }));
+      来源 = 'MVU';
+      return true;
+    }
+  } catch (e) { console.warn('[相册] MVU 读取失败，退回正文', e); }
+  return false;
+};
+
+const 组键 = (r) => {
+  if (分组 === '对象') return r.对象 || '无人';
+  if (分组 === '地点') return r.地点 || '未知地点';
+  const 日 = (r.时间 || '').split(' ')[0];
+  return 日 || '未标注时间';
+};
+
+const 画 = () => {
+  const l = document.getElementById('l');
+  l.textContent = '';
+
+  document.getElementById('t').textContent = '相册';
+  document.getElementById('n').textContent = 记录.length
+    ? `${记录.length} 张 · ${来源}`
+    : '';
+
+  if (!记录.length) {
+    const e = document.createElement('div');
+    e.className = 'empty';
+    e.innerHTML = '相册是空的。<br><span style="font-size:11.5px;color:var(--t-4)">'
+      + '他按下快门时，正文里会出现 &lt;拍摄&gt; 标签。</span>';
+    l.appendChild(e);
+    return;
+  }
+
+  const 组 = {};
+  for (const r of 记录) {
+    const k = 组键(r);
+    (组[k] = 组[k] || []).push(r);
+  }
+  const 名s = Object.keys(组);
+
+  for (const k of 名s) {
+    const h = document.createElement('div');
+    h.className = 'grp';
+    h.innerHTML = `<span>${转义(k)}</span>`
+      + `<span class="dsh-tag" style="font-size:9.5px">${组[k].length}</span>`;
+    l.appendChild(h);
+
+    const g = document.createElement('div');
+    g.id = 'grid';
+    for (const r of 组[k]) {
+      const d = document.createElement('div');
+      d.className = 'ph';
+      const 时 = (r.时间 || '').split(' ')[1] || '';
+      d.innerHTML =
+        `<span class="ico">🖼</span>`
+        + (时 ? `<span class="t">${转义(时)}</span>` : '')
+        + `<span class="cap">${转义((r.描述 || '').slice(0, 26) || '（无描述）')}`
+        + `<span class="who">${转义(r.对象)}${r.地点 ? ' · ' + 转义(r.地点) : ''}</span></span>`;
+      d.addEventListener('click', () => 开(r));
+      g.appendChild(d);
+    }
+    l.appendChild(g);
+  }
+};
+
+const 开 = (r) => {
+  document.getElementById('ovn').textContent = r.对象 || '无人';
+  document.getElementById('ovd').textContent = r.描述 || '（无描述）';
+  const m = [
+    ['时间', r.时间 || '—'],
+    ['地点', r.地点 || '—'],
+    ['类型', r.照片引用 || '—'],
+    ['编号', r.id || '—'],
+  ];
+  document.getElementById('ovm').innerHTML = m
+    .map(([a, b]) => `<div>${转义(a)}：<b>${转义(b)}</b></div>`).join('');
+  document.getElementById('ovz').textContent =
+    '删除这张 → 对手机说「删掉' + (r.对象 || '这张') + '这张照片」。相册只负责给他看。';
+  document.getElementById('ov').classList.add('on');
+};
+
+document.getElementById('ovx').addEventListener('click', () =>
+  document.getElementById('ov').classList.remove('on'));
+document.getElementById('ov').addEventListener('click', (e) => {
+  if (e.target.id === 'ov') document.getElementById('ov').classList.remove('on');
+});
+for (const c of document.querySelectorAll('#bar .chip')) {
+  c.addEventListener('click', () => {
+    for (const o of document.querySelectorAll('#bar .chip')) o.classList.remove('on');
+    c.classList.add('on');
+    分组 = c.dataset.g;
+    画();
+  });
+}
+
+画();
+
+// ★ 先画正文（一定有的），再尝试升级成 MVU 数据
+if (typeof waitGlobalInitialized === 'function') {
+  waitGlobalInitialized('Mvu').then(() => { if (拉MVU()) 画(); })
+    .catch((e) => console.warn('[相册] Mvu 不可用，仅显示正文', e));
+}
+console.info('[相册] 渲染完成', 记录.length, 来源);
+
+};
+
+// ★★★ 按 AGENTS.md 的加载时机约定：用 jQuery 的 $() 作为入口
+//   ★ 但这页是被正则 loader 用 document.write 写进来的独立 iframe，
+//      不能假定 jQuery 一定在；万一没有就直接跑，绝不能让整页空白
+if (typeof $ === 'function') $(启动); else 启动();
+</script>
+</body>
+</html>

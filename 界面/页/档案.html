@@ -88,7 +88,7 @@ for (const 一 of 行s.slice(1)) {
   d.style.cssText = 'display:flex;gap:9px;align-items:baseline;margin:6px 0;font-size:13px';
   const 好 = /^✅/.test(一), 锁 = /^🔒/.test(一);
   d.innerHTML = `<span style="flex:0 0 auto;font-size:12px">${好 ? '✅' : 锁 ? '🔒' : '·'}</span>
-                 <span style="flex:1;color:${锁 ? 'var(--t-4)' : 'var(--t-2)'}">${转义(一.replace(/^[✅🔒·]\s*/, ''))}</span>`;
+                 <span style="flex:1;color:${锁 ? 'var(--t-4)' : 'var(--t-2)'}">${转义(一.replace(/^(?:✅|🔒|·)\s*/, ''))}</span>`;
   b.appendChild(d);
 }
 if (关系) {
