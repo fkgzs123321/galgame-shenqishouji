@@ -14910,7 +14910,16 @@ let __webpack_exports__ = {};
   var vue__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! vue */ "./node_modules/.pnpm/vue@3.5.40_typescript@6.0.3/node_modules/vue/dist/vue.runtime.esm-bundler.js");
   var _vue__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./选择器.vue */ "./src/神奇手机/神奇手机/界面/选卡/选择器.vue");
   var _global_css__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./global.css */ "./src/神奇手机/神奇手机/界面/选卡/global.css");
-  (async () => {
+  function 等挂载点(cb, 次数 = 0) {
+    const 位 = document.getElementById("app");
+    if (位) return cb();
+    if (次数 > 200) {
+      console.error("[神奇手机·选卡] 等不到 #app，放弃挂载");
+      return;
+    }
+    setTimeout(() => 等挂载点(cb, 次数 + 1), 20);
+  }
+  等挂载点(() => {
     try {
       (0, vue__WEBPACK_IMPORTED_MODULE_0__.createApp)(_vue__WEBPACK_IMPORTED_MODULE_1__["default"]).mount("#app");
     } catch (e) {
@@ -14920,7 +14929,7 @@ let __webpack_exports__ = {};
         位.innerHTML = '<div style="padding:16px;background:#1a0f14;color:#ff8fa3;' + 'border:1px solid #4a2430;border-radius:8px;font:12px/1.7 ui-monospace,monospace">' + "开局界面挂载失败：" + String(e?.message ?? e) + "</div>";
       }
     }
-  })();
+  });
 })();</script><style>/*!*************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
   !*** css ./node_modules/.pnpm/css-loader@7.1.4_webpack@5.109.2/node_modules/css-loader/dist/cjs.js??clonedRuleSet-396.use[1]!./node_modules/.pnpm/vue-loader@17.4.2_@vue+comp_68325ca5bf5f0f82bd2d45e08f08fae2/node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/.pnpm/postcss-loader@8.2.1_postcs_d4363770b85bd5c7b44b206e5033d0b9/node_modules/postcss-loader/dist/cjs.js!./node_modules/.pnpm/vue-loader@17.4.2_@vue+comp_68325ca5bf5f0f82bd2d45e08f08fae2/node_modules/vue-loader/dist/index.js??ruleSet[1].rules[6].use[0]!./src/神奇手机/神奇手机/界面/选卡/选择器.vue?vue&type=style&index=0&id=9548517e&scoped=true&lang=css ***!
   \*************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************/

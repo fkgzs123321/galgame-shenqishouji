@@ -48599,6 +48599,13 @@ let __webpack_exports__ = {};
         }
       }
     };
+    await new Promise(好 => {
+      const 试 = (n = 0) => {
+        if (document.getElementById("app") || n > 200) return 好();
+        setTimeout(() => 试(n + 1), 20);
+      };
+      试();
+    });
     try {
       await (0, async_wait_until__WEBPACK_IMPORTED_MODULE_0__.waitUntil)(() => typeof window.Mvu !== "undefined", {
         timeout: 6e3
