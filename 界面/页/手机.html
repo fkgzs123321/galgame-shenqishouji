@@ -3,115 +3,100 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>神奇手机</title>
+<title>手机系统</title>
 <link rel="stylesheet" href="https://testingcf.jsdelivr.net/gh/fkgzs123321/galgame-shenqishouji@main/界面/_共用/base.css">
 <style>
-  .phone-frame {
-    max-width: 440px;
-    margin: 10px auto;
-    background: #09080e;
-    border-radius: 26px;
-    border: 2px solid #231f32;
-    box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.12);
-    overflow: hidden;
+  /* ★★★ 这里【不再画手机壳】。
+   * 原因：真正的小手机在悬浮球浮窗里（界面/面板）。
+   * 本页只把 <phone>…</phone> 里的系统消息渲染成【通知卡】。
+   *   旧版有 .phone-frame / .dynamic-island / .battery-pill —— 那是在楼层里又画了一台手机。
+   */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: transparent !important;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding: 6px 4px;
+    color: #e2e8f0;
   }
-  .phone-top-bar {
+  .sys-card {
+    max-width: 480px;
+    margin: 6px auto;
+    background: rgba(14, 13, 22, 0.94);
+    border: 1px solid rgba(139, 92, 246, 0.28);
+    border-radius: 14px;
+    box-shadow: 0 8px 26px -10px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+  }
+  /* ── 顶栏：不是手机壳，是一行「系统」标识 ── */
+  .sys-bar {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 7px 18px 4px;
-    background: #0d0b16;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  }
-  .phone-clock {
+    gap: 7px;
+    padding: 7px 12px;
+    background: linear-gradient(90deg, rgba(139, 92, 246, 0.16), rgba(139, 92, 246, 0.03));
+    border-bottom: 1px solid rgba(139, 92, 246, 0.18);
     font-size: 11px;
-    font-weight: 700;
-    color: #fff;
-    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.4px;
+    color: #c4b5fd;
   }
-  .dynamic-island {
-    width: 76px;
-    height: 12px;
-    background: #000;
-    border-radius: 10px;
+  .sys-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: #a78bfa;
+    box-shadow: 0 0 6px #a78bfa;
+    flex: none;
+  }
+  .sys-bar-t { font-weight: 600; }
+  .sys-bar-s { margin-left: auto; color: rgba(196, 181, 253, 0.45); font-size: 10px; }
+
+  /* ── 通知条目 ── */
+  .sys-body { padding: 5px 0; }
+  .sys-item {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-  }
-  .sensor-dot {
-    width: 4px;
-    height: 4px;
-    border-radius: 50%;
-    background: #10b981;
-    box-shadow: 0 0 4px #10b981;
-  }
-  .phone-status-right {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 10.5px;
-    color: rgba(255, 255, 255, 0.6);
-  }
-  .battery-pill {
-    display: inline-flex;
-    align-items: center;
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    border-radius: 3px;
-    padding: 1px 2px;
-    height: 10px;
-    width: 18px;
-  }
-  .battery-level {
-    height: 100%;
-    width: 85%;
-    background: #10b981;
-    border-radius: 1px;
-  }
-  .phone-body {
-    padding: 14px 16px;
-    display: flex;
-    flex-direction: column;
     gap: 8px;
-  }
-  .phone-item {
-    background: rgba(255, 255, 255, 0.035);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 12px;
-    padding: 9px 12px;
+    padding: 7px 13px;
     font-size: 12.5px;
-    line-height: 1.6;
-    color: #d1ccd9;
+    line-height: 1.62;
+    color: #cfc9db;
+    border-left: 2px solid transparent;
   }
-  .phone-item.primary {
-    background: rgba(139, 92, 246, 0.08);
-    border-color: rgba(139, 92, 246, 0.25);
+  .sys-item + .sys-item { border-top: 1px solid rgba(255, 255, 255, 0.035); }
+  .sys-item .mk { flex: none; opacity: 0.85; }
+
+  /* 穿透 / 硬件底层的头一条 —— 高亮 */
+  .sys-item.primary {
+    background: rgba(139, 92, 246, 0.09);
+    border-left-color: #8b5cf6;
     color: #fff;
+    font-weight: 600;
   }
-  .phone-item.radar {
-    background: rgba(245, 158, 11, 0.08);
-    border-color: rgba(245, 158, 11, 0.25);
+  /* 雷达 / 检索 —— 琥珀 */
+  .sys-item.radar {
+    background: rgba(245, 158, 11, 0.07);
+    border-left-color: #f59e0b;
     color: #fde68a;
   }
+  /* 警示 / 风险 —— 红 */
+  .sys-item.warn {
+    background: rgba(239, 68, 68, 0.08);
+    border-left-color: #ef4444;
+    color: #fca5a5;
+  }
+  /* 身份 / 越权 —— 紫点 */
+  .sys-item.ident { border-left-color: rgba(167, 139, 250, 0.5); }
 </style>
 </head>
 <body>
-<div class="phone-frame">
-  <div class="phone-top-bar">
-    <span class="phone-clock" id="clock">--:--</span>
-    <div class="dynamic-island">
-      <span class="sensor-dot"></span>
-    </div>
-    <div class="phone-status-right">
-      <span>5G</span>
-      <span class="battery-pill"><span class="battery-level"></span></span>
-      <span id="bat">87%</span>
-    </div>
+<div class="sys-card">
+  <div class="sys-bar">
+    <span class="sys-dot"></span>
+    <span class="sys-bar-t">手机 · 系统层</span>
+    <span class="sys-bar-s" id="clock">--:--</span>
   </div>
-  <div class="phone-body" id="c"></div>
+  <div class="sys-body" id="c"></div>
 </div>
 <script>
+/* ★★★ 同页多实例：按本 iframe 在宿主里的序号，取第 N 个 <phone> */
 const M = getChatMessages(getCurrentMessageId())[0];
 const 原文 = M ? (M.message || '') : '';
 const 取 = (名) => {
@@ -143,24 +128,28 @@ document.getElementById('clock').textContent =
 
 const raw = 取('phone');
 const c = document.getElementById('c');
-const 行 = raw.split('\n');
 
-for (const 一 of 行) {
+for (const 一 of raw.split('\n')) {
   const s = 一.trim();
   if (!s) continue;
   const d = document.createElement('div');
-  d.className = 'phone-item';
-  
-  if (/^📱|底层穿透|硬件/.test(s)) {
+  d.className = 'sys-item';
+
+  // ★ 分类（★ 与旧版同判据，只换渲染容器）
+  if (/^📱|底层穿透|硬件|系统层/.test(s)) {
     d.className += ' primary';
-    d.innerHTML = '<strong>' + 转义(s) + '</strong>';
-  } else if (/^⚡|雷达|发现/.test(s)) {
+    d.innerHTML = '<span class="mk">📱</span><span>' + 转义(s.replace(/^📱\s*/, '')) + '</span>';
+  } else if (/^⚡|雷达|检索|发现/.test(s)) {
     d.className += ' radar';
-    d.innerHTML = '⚡ ' + 转义(s.replace(/^⚡\s*/, ''));
-  } else if (/^●|已自动|越权/.test(s)) {
-    d.innerHTML = '<span style="color:#a78bfa;margin-right:4px">●</span>' + 转义(s.replace(/^●\s*/, ''));
+    d.innerHTML = '<span class="mk">⚡</span><span>' + 转义(s.replace(/^⚡\s*/, '')) + '</span>';
+  } else if (/^⚠|风险|警告|已记录/.test(s)) {
+    d.className += ' warn';
+    d.innerHTML = '<span class="mk">⚠</span><span>' + 转义(s.replace(/^⚠️?\s*/, '')) + '</span>';
+  } else if (/^●|已自动|越权|伪装|接入/.test(s)) {
+    d.className += ' ident';
+    d.innerHTML = '<span class="mk" style="color:#a78bfa">●</span><span>' + 转义(s.replace(/^●\s*/, '')) + '</span>';
   } else {
-    d.innerHTML = 转义(s);
+    d.innerHTML = '<span>' + 转义(s) + '</span>';
   }
   c.appendChild(d);
 }
