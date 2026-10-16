@@ -28,10 +28,33 @@
 const M = getChatMessages(getCurrentMessageId())[0];
 const 原文 = M ? (M.message || '') : '';
 const 取 = (名) => {
-  const re = new RegExp('<' + 名 + '(?:\\s[^>]*)?>([\\s\\S]*?)</' + 名 + '>');
-  const m = 原文.match(re);
-  return m ? m[1].trim() : '';
+  // ★★★ 我是这一楼里第几个标签？—— 用酒馆助手给的序号，不再靠猜
+  //   ★ 为什么不能数 f.src：酒馆助手 use_blob_url 默认 false，
+  //     每个 iframe 的 src 都是 about:srcdoc → 分不清谁是谁 → 同一楼里混排会错位
+  //   ★ 序号来源：iframe.id = "TH-message--<楼层>--<代码块序号>"（酒馆助手源码定的）
+  let 块序 = -1;
+  try {
+    const fe0 = window.frameElement;
+    const id = (fe0 && fe0.id) || window.__TH_IFRAME_ID || window.name || '';
+    const mt = /TH-message--\d+--(\d+)/.exec(id);
+    if (mt) 块序 = Number(mt[1]);
+  } catch (e) {}
+  if (块序 < 0) {
+    // ★ 兜底：数我在本楼层全部 iframe 里的位置，就是代码块序号
+    try {
+      const fe1 = window.frameElement;
+      const box = fe1 && (fe1.closest ? fe1.closest('.mes_text') : fe1.parentElement);
+      if (box) 块序 = Array.prototype.indexOf.call(box.querySelectorAll('iframe'), fe1);
+    } catch (e) {}
+  }
+  const 全部 = Array.from(原文.matchAll(/<([A-Za-z\u4e00-\u9fa5_]+)(?:\s[^>]*)?>([\s\S]*?)<\/\1>/g));
+  // ★ 校验：序号指向的那一块，标签名就是我
+  //   ★★ 对不上就退化成「同标签取第一个」—— 只退化成旧行为，绝不显示别人的内容
+  if (块序 >= 0 && 全部[块序] && 全部[块序][1] === 名) return 全部[块序][2].trim();
+  const 同 = 全部.filter(function (x) { return x[1] === 名; });
+  return 同.length ? 同[0][2].trim() : '';
 };
+;
 // ★★★ 属性解析 —— 只用字符串操作，不用正则
 //   ★ 为什么：这里有 Python→文件→浏览器 三层转义，
 //     正则字面量里的 \s 会在某一层被吃掉或加倍，极难排查
