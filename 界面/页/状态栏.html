@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>神奇手机 · 楼层主力状态看板</title>
+<style>
+:root {
+  --bg-shell: rgba(15, 13, 24, 0.94);
+  --bg-card: rgba(28, 24, 42, 0.75);
+  --bg-subcard: rgba(0, 0, 0, 0.35);
+  --border-main: rgba(139, 92, 246, 0.28);
+  --border-light: rgba(255, 255, 255, 0.08);
+  --text-main: #f4f4f5;
+  --text-sub: #a1a1aa;
+  --text-muted: #71717a;
+  
+  --c-green: #34d399;
+  --c-gold: #fbbf24;
+  --c-purple: #c084fc;
+  --c-pink: #f472b6;
+  --c-red: #f87171;
+  --c-blue: #60a5fa;
+  --c-cyan: #22d3ee;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  color: var(--text-main);
+  background: transparent;
+  padding: 8px 4px;
+}
+
+/* 主容器 */
+.dsh-board {
+  background: var(--bg-shell);
+  border: 1px solid var(--border-main);
+  border-radius: 16px;
+  padding: 12px 14px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* 1. 顶栏：环境与因果状态 */
+.dsh-env-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-light);
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.dsh-env-l {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.dsh-loc-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c-blue);
+  background: rgba(59, 130, 246, 0.12);
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+}
+.dsh-time-text {
+  font-size: 11px;
+  color: var(--text-sub);
+}
+.dsh-causal-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: var(--c-green);
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+.dsh-causal-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--c-green);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--c-green);
+}
+
+/* 2. 主角肉身与核心资产面板 */
+.dsh-hero-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.dsh-hero-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.dsh-hero-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c-gold);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dsh-hero-assets {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.dsh-asset-box {
+  background: var(--bg-subcard);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  padding: 5px 6px;
+  text-align: center;
+}
+.dsh-asset-k {
+  font-size: 9px;
+  color: var(--text-muted);
+}
+.dsh-asset-v {
+  font-size: 13px;
+  font-weight: 700;
+  margin-top: 2px;
+}
+.dsh-asset-v.cash { color: var(--c-green); }
+.dsh-asset-v.lv { color: var(--c-cyan); }
+.dsh-asset-v.pts { color: var(--c-gold); }
+.dsh-asset-v.job { color: var(--c-purple); }
+
+/* 主角身体特权标签 */
+.dsh-hero-body-tags {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: var(--text-sub);
+  background: rgba(0, 0, 0, 0.25);
+  padding: 6px 8px;
+  border-radius: 8px;
+}
+.dsh-tag-badge {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #fde68a;
+}
+.dsh-tag-badge.sec {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: rgba(139, 92, 246, 0.3);
+  color: #ddd6fe;
+}
+.dsh-tag-badge.safe {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #a7f3d0;
+}
+
+/* 3. ★ 当前锁定焦点女主 NSFW 档案 (主力看板核心) */
+.dsh-nsfw-section {
+  background: linear-gradient(145deg, rgba(38, 20, 48, 0.75), rgba(24, 18, 38, 0.85));
+  border: 1px solid rgba(244, 114, 182, 0.35);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(244, 114, 182, 0.08);
+}
+.dsh-nsfw-head {
+  padding: 10px 14px;
+  background: rgba(244, 114, 182, 0.12);
+  border-bottom: 1px solid rgba(244, 114, 182, 0.2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+.dsh-heroine-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.dsh-heroine-avatar {
+  font-size: 20px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(244, 114, 182, 0.2);
+  border: 1.5px solid var(--c-pink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.dsh-heroine-info {
+  display: flex;
+  flex-direction: column;
+}
+.dsh-heroine-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dsh-heroine-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+}
+.dsh-heroine-role {
+  font-size: 11px;
+  color: var(--c-pink);
+}
+.dsh-heroine-tags {
+  display: flex;
+  gap: 5px;
+  margin-top: 3px;
+}
+.dsh-badge-pill {
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid;
+}
+.dsh-badge-pill.power {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+}
+.dsh-badge-pill.temp {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.4);
+  color: #fde68a;
+}
+.dsh-badge-pill.rel {
+  background: rgba(168, 85, 247, 0.15);
+  border-color: rgba(168, 85, 247, 0.4);
+  color: #e9d5ff;
+}
+
+.dsh-toggle-btn {
+  font-size: 11px;
+  color: var(--text-sub);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.dsh-toggle-icon {
+  font-size: 10px;
+  transition: transform 0.25s ease;
+}
+.dsh-toggle-icon.open {
+  transform: rotate(180deg);
+}
+
+/* 女主主体内容 */
+.dsh-nsfw-body {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* 关系度与快感双进度条 */
+.dsh-bar-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.dsh-bar-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.dsh-bar-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-sub);
+}
+.dsh-bar-track {
+  height: 6px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 3px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.dsh-bar-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+.dsh-bar-fill.rel { background: linear-gradient(90deg, #ec4899, #f43f5e); }
+.dsh-bar-fill.wet { background: linear-gradient(90deg, #3b82f6, #06b6d4); }
+
+/* 性生理状态卡片群 (硬核指标) */
+.dsh-sex-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.dsh-sex-box {
+  background: var(--bg-subcard);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dsh-sex-box-k {
+  font-size: 9px;
+  color: var(--text-muted);
+}
+.dsh-sex-box-v {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+.dsh-sex-box-v.hot { color: #f472b6; }
+.dsh-sex-box-v.wet { color: #38bdf8; }
+.dsh-sex-box-v.org { color: #fbbf24; }
+
+/* 穿搭与体表 */
+.dsh-outfit-box {
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-size: 11px;
+  color: var(--text-sub);
+  line-height: 1.5;
+}
+.dsh-outfit-box strong {
+  color: #e4e4e7;
+  font-weight: 600;
+}
+
+/* 敏感点 & 禁区癖好 & 致命把柄 */
+.dsh-pills-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 11px;
+}
+.dsh-pill-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+.dsh-pill-line-k {
+  font-size: 10px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  width: 55px;
+  padding-top: 1px;
+}
+.dsh-pill-line-v {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.dsh-micro-chip {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #d4d4d8;
+}
+.dsh-micro-chip.pink {
+  background: rgba(236, 72, 153, 0.15);
+  border-color: rgba(236, 72, 153, 0.3);
+  color: #f472b6;
+}
+.dsh-micro-chip.purple {
+  background: rgba(168, 85, 247, 0.15);
+  border-color: rgba(168, 85, 247, 0.3);
+  color: #c084fc;
+}
+.dsh-micro-chip.red {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+}
+
+/* 4. 多角色快速切换 Tab */
+.dsh-char-tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 2px 0;
+  scrollbar-width: none;
+}
+.dsh-char-tabs::-webkit-scrollbar {
+  display: none;
+}
+.dsh-char-tab-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 3px 10px;
+  font-size: 11px;
+  color: var(--text-sub);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+.dsh-char-tab-btn.active {
+  background: rgba(244, 114, 182, 0.2);
+  border-color: var(--c-pink);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* 5. 底部底座（★ 呼出小手机的提示与样式已删 —— 有悬浮球了） */
+.dsh-foot-note {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  color: var(--text-muted);
+  padding-top: 4px;
+}
+</style>
+</head>
+<body>
+
+<div class="dsh-board" id="dsh-status-app">
+  <!-- 1. 顶栏：基站与环境 -->
+  <div class="dsh-env-bar">
+    <div class="dsh-env-l">
+      <span class="dsh-loc-pill">
+        <span>📍</span>
+        <span id="txt-loc">东京·歌舞伎町</span>
+      </span>
+      <span class="dsh-time-text" id="txt-time">2025-10-12 星期二 23:45</span>
+    </div>
+    <div class="dsh-causal-pill">
+      <span class="dsh-causal-dot"></span>
+      <span>因果免责 · 绝对匿名生效中</span>
+    </div>
+  </div>
+
+  <!-- 2. 主角肉身与资产核心面板 -->
+  <div class="dsh-hero-card">
+    <div class="dsh-hero-top">
+      <div class="dsh-hero-title">
+        <span>👤 主角物理状态 & 核心特权资产</span>
+      </div>
+      <div style="font-size:10px;color:var(--text-muted);" id="txt-phone-status">
+        手机状态: 正常 · 4096-bit 匿名
+      </div>
+    </div>
+
+    <!-- 4 大资产指标 -->
+    <div class="dsh-hero-assets">
+      <div class="dsh-asset-box">
+        <div class="dsh-asset-k">现实现金</div>
+        <div class="dsh-asset-v cash" id="txt-cash">¥20,000</div>
+      </div>
+      <div class="dsh-asset-box">
+        <div class="dsh-asset-k">手机等级</div>
+        <div class="dsh-asset-v lv" id="txt-lv">Lv.1</div>
+      </div>
+      <div class="dsh-asset-box">
+        <div class="dsh-asset-k">可用积分</div>
+        <div class="dsh-asset-v pts" id="txt-pts">⚡ 0</div>
+      </div>
+      <div class="dsh-asset-box">
+        <div class="dsh-asset-k">任务委托点</div>
+        <div class="dsh-asset-v job" id="txt-job">🎯 0</div>
+      </div>
+    </div>
+
+    <!-- 主角身体硬件与技能配置 -->
+    <div class="dsh-hero-body-tags">
+      <span>🍆 硬件状态:</span>
+      <span class="dsh-tag-badge" id="txt-penis-size">尺寸: 14.5cm · 标准适配</span>
+      <span class="dsh-tag-badge sec" id="txt-stamina">耐受度/精力: 95/100</span>
+      <span class="dsh-tag-badge safe" id="txt-health-stat">健康: 无病变 · 绝对免疫</span>
+    </div>
+  </div>
+
+  <!-- 多角色切换 Tab (若有多名互动女性) -->
+  <div class="dsh-char-tabs" id="tab-char-container" style="display:none;"></div>
+
+  <!-- 3. ★ 当前焦点女主 NSFW 档案 (主力看板核心) -->
+  <div class="dsh-nsfw-section" id="box-heroine-section">
+    <div class="dsh-nsfw-head" id="btn-toggle-heroine">
+      <div class="dsh-heroine-brand">
+        <div class="dsh-heroine-avatar" id="avatar-icon">🍑</div>
+        <div class="dsh-heroine-info">
+          <div class="dsh-heroine-name-row">
+            <span class="dsh-heroine-name" id="txt-char-name">沈清竹</span>
+            <span class="dsh-heroine-role" id="txt-char-role">(31岁 · 教师)</span>
+          </div>
+          <div class="dsh-heroine-tags">
+            <span class="dsh-badge-pill power" id="txt-power-pos">地位: 平等对抗</span>
+            <span class="dsh-badge-pill temp" id="txt-thread-temp">🔥 线程温度: 炽热</span>
+            <span class="dsh-badge-pill rel" id="txt-rel-stage">进度: 4/10 调教期</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="dsh-toggle-btn">
+        <span id="txt-toggle-label">收起详情</span>
+        <span class="dsh-toggle-icon open" id="icon-toggle-arrow">▾</span>
+      </div>
+    </div>
+
+    <!-- 展开详情面板 -->
+    <div class="dsh-nsfw-body" id="body-heroine-detail">
+      <!-- 双进度条：关系进度 & 当前湿润度 -->
+      <div class="dsh-bar-section">
+        <div class="dsh-bar-item">
+          <div class="dsh-bar-head">
+            <span>关系驯化进度</span>
+            <span id="txt-rel-percent">40%</span>
+          </div>
+          <div class="dsh-bar-track">
+            <div class="dsh-bar-fill rel" id="bar-rel-fill" style="width: 40%;"></div>
+          </div>
+        </div>
+        <div class="dsh-bar-item">
+          <div class="dsh-bar-head">
+            <span>下身湿润度</span>
+            <span id="txt-wet-percent">微润 45%</span>
+          </div>
+          <div class="dsh-bar-track">
+            <div class="dsh-bar-fill wet" id="bar-wet-fill" style="width: 45%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 性生理硬核指标 -->
+      <div class="dsh-sex-grid">
+        <div class="dsh-sex-box">
+          <div class="dsh-sex-box-k">高潮统计</div>
+          <div class="dsh-sex-box-v org" id="txt-orgasms">已达 2 次 (+1)</div>
+        </div>
+        <div class="dsh-sex-box">
+          <div class="dsh-sex-box-k">偏好尺寸</div>
+          <div class="dsh-sex-box-v hot" id="txt-pref-size">14.8 cm (匹配度高)</div>
+        </div>
+        <div class="dsh-sex-box">
+          <div class="dsh-sex-box-k">生理周期</div>
+          <div class="dsh-sex-box-v wet" id="txt-fertile">排卵危险期 (受孕65%)</div>
+        </div>
+      </div>
+
+      <!-- 当前穿搭与体表 -->
+      <div class="dsh-outfit-box" id="txt-outfit-box">
+        <strong>当前穿搭:</strong> 白色蕾丝衬衫(微透汗渍)、黑色包臀裙、肉色连裤袜(裆部水痕濡湿)、丁字裤勒入臀肉。
+        <br><strong>体香与体表:</strong> 柑橘木质调香水混杂体汗与石楠花气息，体温 37.8℃，后背发烫。
+      </div>
+
+      <!-- 敏感点 & 禁区癖好 & 致命把柄 -->
+      <div class="dsh-pills-row">
+        <div class="dsh-pill-line">
+          <span class="dsh-pill-line-k">⚡ 敏感带:</span>
+          <div class="dsh-pill-line-v" id="box-sensitives">
+            <span class="dsh-micro-chip pink">乳头充血</span>
+            <span class="dsh-micro-chip pink">肉核触电</span>
+            <span class="dsh-micro-chip pink">宫颈深顶</span>
+            <span class="dsh-micro-chip pink">后颈轻呵</span>
+          </div>
+        </div>
+
+        <div class="dsh-pill-line">
+          <span class="dsh-pill-line-k">🔥 癖好禁区:</span>
+          <div class="dsh-pill-line-v" id="box-fetishes">
+            <span class="dsh-micro-chip purple">夫前偷情暗爽</span>
+            <span class="dsh-micro-chip purple">羞耻语调教</span>
+            <span class="dsh-micro-chip purple">内射渴望</span>
+          </div>
+        </div>
+
+        <div class="dsh-pill-line">
+          <span class="dsh-pill-line-k">🔒 致命把柄:</span>
+          <div class="dsh-pill-line-v" id="box-leverages">
+            <span class="dsh-micro-chip red" id="txt-leverage-item">已截获私密更衣室露脸自拍 (相册穿透掌握)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. 底部速查（★ 呼出小手机已删 —— 有悬浮球了，这里再点一次是重复入口） -->
+  <div class="dsh-foot-note">
+    <span>📊 正文主力看板 · 实时与楼层变量双向同步</span>
+  </div>
+</div>
+
+<script>
+(function() {
+  var isExpanded = true;
+  var currentSelectedChar = '';
+
+  function syncHeight() {
+    try {
+      var fe = window.frameElement;
+      if (!fe) return;
+      var d = document.documentElement;
+      var b = document.body;
+      var h = Math.max(d ? d.scrollHeight : 0, b ? b.scrollHeight : 0);
+      if (h > 0) {
+        fe.style.height = h + 'px';
+        fe.style.minHeight = h + 'px';
+      }
+    } catch (_) {}
+  }
+
+  function getStatData() {
+    try {
+      var pw = window.parent || window;
+      if (pw.Mvu && typeof pw.Mvu.getMvuData === 'function') {
+        var ret = pw.Mvu.getMvuData({type: 'message', message_id: 'latest'});
+        if (ret && ret.stat_data) return ret.stat_data;
+      }
+      if (typeof pw.getVariables === 'function') {
+        var v = pw.getVariables({type: 'message', message_id: 'latest'});
+        if (v && v.stat_data) return v.stat_data;
+      }
+      if (pw.__dshLastStat) return pw.__dshLastStat;
+    } catch (_) {}
+    return null;
+  }
+
+  // 绑定折叠点击
+  var btnToggle = document.getElementById('btn-toggle-heroine');
+  var bodyDetail = document.getElementById('body-heroine-detail');
+  var iconArrow = document.getElementById('icon-toggle-arrow');
+  var txtToggleLabel = document.getElementById('txt-toggle-label');
+
+  if (btnToggle) {
+    btnToggle.addEventListener('click', function() {
+      isExpanded = !isExpanded;
+      bodyDetail.style.display = isExpanded ? 'flex' : 'none';
+      txtToggleLabel.textContent = isExpanded ? '收起详情' : '展开详情';
+      if (isExpanded) {
+        iconArrow.classList.add('open');
+      } else {
+        iconArrow.classList.remove('open');
+      }
+      syncHeight();
+    });
+  }
+
+  function render() {
+    var data = getStatData() || {};
+
+    // 1. 环境与时间
+    var loc = (data.世界 && data.世界.当前位置) || '中国大陆';
+    var date = (data.世界 && data.世界.日期) || '';
+    var week = (data.世界 && data.世界.星期) || '';
+    var time = (data.世界 && data.世界.时刻) || '';
+    document.getElementById('txt-loc').textContent = loc;
+    document.getElementById('txt-time').textContent = (date ? (date + ' · ' + week + ' ' + time) : '2025-10-12 星期二 23:45');
+
+    // 2. 主角肉身与资产
+    var cash = (data.玩家 && typeof data.玩家.现金 === 'number') ? data.玩家.现金 : 20000;
+    var lv = (data.手机 && typeof data.手机.等级 === 'number') ? data.手机.等级 : 1;
+    var pts = (data.积分 && typeof data.积分.可用 === 'number') ? data.积分.可用 : 0;
+    var jobs = (data.积分 && typeof data.积分.可用 === 'number') ? data.积分.可用 : 0;  // ★ 统一用手机积分
+
+    document.getElementById('txt-cash').textContent = '¥' + cash.toLocaleString();
+    document.getElementById('txt-lv').textContent = 'Lv.' + lv;
+    document.getElementById('txt-pts').textContent = '⚡ ' + pts;
+    document.getElementById('txt-job').textContent = '🎯 ' + jobs;
+
+    // 主角肉体特权展示
+    var sk = data.技能 || {};
+    var pSizeDesc = '尺寸: 14.5cm · 标准适配';
+    if (sk.尺寸自由) pSizeDesc = '尺寸自由 Lv.' + sk.尺寸自由 + ' · 随心掌控';
+    if (sk.倒钩) pSizeDesc += ' · 倒钩已激活';
+    if (sk.硬度翻倍) pSizeDesc += ' · 极致如铁';
+    document.getElementById('txt-penis-size').textContent = pSizeDesc;
+
+    // 3. 焦点女主 NSFW 档案
+    var chars = data.人物 || {};
+    var charKeys = Object.keys(chars);
+
+    var charTabs = document.getElementById('tab-char-container');
+    if (charKeys.length > 1) {
+      charTabs.style.display = 'flex';
+      charTabs.innerHTML = '';
+      charKeys.forEach(function(ck) {
+        var btn = document.createElement('button');
+        btn.className = 'dsh-char-tab-btn' + (ck === (currentSelectedChar || charKeys[charKeys.length - 1]) ? ' active' : '');
+        btn.textContent = (chars[ck].代号 || ck);
+        btn.onclick = function() {
+          currentSelectedChar = ck;
+          render();
+        };
+        charTabs.appendChild(btn);
+      });
+    } else {
+      charTabs.style.display = 'none';
+    }
+
+    if (charKeys.length > 0) {
+      var targetKey = currentSelectedChar && chars[currentSelectedChar] ? currentSelectedChar : charKeys[charKeys.length - 1];
+      var target = chars[targetKey] || {};
+
+      document.getElementById('box-heroine-section').style.display = 'block';
+      document.getElementById('txt-char-name').textContent = target.代号 || targetKey;
+      
+      var age = (target.外貌 && target.外貌.年龄) ? target.外貌.年龄 + '岁' : '年轻';
+      var role = target.身份 || target.原型 || '重要角色';
+      document.getElementById('txt-char-role').textContent = '(' + age + ' · ' + role + ')';
+
+      document.getElementById('txt-power-pos').textContent = '地位: ' + (target.权力位置 || '对抗中');
+      document.getElementById('txt-thread-temp').textContent = '🔥 线程: ' + (target.线程温度 || '活跃');
+      
+      var rel = target.关系进度 !== undefined ? target.关系进度 : 0;
+      document.getElementById('txt-rel-stage').textContent = '进度: ' + rel + '/10';
+      document.getElementById('txt-rel-percent').textContent = (rel * 10) + '%';
+      document.getElementById('bar-rel-fill').style.width = (rel * 10) + '%';
+
+      // 湿润度与性数据
+      var sexData = target.性数据 || target.性 || {};
+      var wet = sexData.湿润度 !== undefined ? sexData.湿润度 : 4.5;
+      var wetPercent = Math.min(100, Math.round(wet * 10));
+      var wetDesc = wet >= 8 ? '泛滥成灾' : (wet >= 5 ? '湿润多汁' : '轻微湿润');
+      document.getElementById('txt-wet-percent').textContent = wetDesc + ' ' + wetPercent + '%';
+      document.getElementById('bar-wet-fill').style.width = wetPercent + '%';
+
+      var orgs = sexData.已高潮次数 !== undefined ? sexData.已高潮次数 : 0;
+      document.getElementById('txt-orgasms').textContent = '已达 ' + orgs + ' 次';
+
+      var prefSize = sexData.偏好尺寸 ? (sexData.偏好尺寸 + ' cm') : '14.8 cm';
+      document.getElementById('txt-pref-size').textContent = prefSize + ' (契合度高)';
+
+      // 穿搭与体表
+      var outDesc = '';
+      if (target.外貌) {
+        if (target.外貌.穿搭) {
+          var cd = target.外貌.穿搭;
+          outDesc = '<strong>当前穿搭:</strong> ' + [cd.上装, cd.下装, cd.内衣, cd.袜子, cd.饰品].filter(Boolean).join('、');
+        } else if (target.外貌.具体细节) {
+          outDesc = '<strong>穿搭细节:</strong> ' + target.外貌.具体细节;
+        } else {
+          outDesc = '<strong>当前穿搭:</strong> 贴身日常衣物，衣料紧绷凸显体态曲线。';
+        }
+
+        if (target.外貌.味道 || target.外貌.气味) {
+          outDesc += '<br><strong>体香气味:</strong> ' + (target.外貌.味道 || target.外貌.气味);
+        }
+      }
+      if (outDesc) document.getElementById('txt-outfit-box').innerHTML = outDesc;
+
+      // 敏感点
+      var boxSens = document.getElementById('box-sensitives');
+      boxSens.innerHTML = '';
+      var sensList = sexData.敏感点 ? (Array.isArray(sexData.敏感点) ? sexData.敏感点 : String(sexData.敏感点).split(/[、,，]/)) : ['乳头敏感', '肉核发胀', '深处宫颈'];
+      sensList.forEach(function(s) {
+        if (!s) return;
+        var sp = document.createElement('span');
+        sp.className = 'dsh-micro-chip pink';
+        sp.textContent = s.trim();
+        boxSens.appendChild(sp);
+      });
+
+      // 癖好
+      var boxFet = document.getElementById('box-fetishes');
+      boxFet.innerHTML = '';
+      var fetList = sexData.癖好 ? (Array.isArray(sexData.癖好) ? sexData.癖好 : String(sexData.癖好).split(/[、,，]/)) : ['内射沉沦', '羞耻快感'];
+      fetList.forEach(function(f) {
+        if (!f) return;
+        var sp = document.createElement('span');
+        sp.className = 'dsh-micro-chip purple';
+        sp.textContent = f.trim();
+        boxFet.appendChild(sp);
+      });
+
+      // 把柄
+      var priv = target.私密档案 || {};
+      var lev = priv.致命把柄 || priv.出轨记录 || '手机通讯录与云端相册已被深度扫描锁定';
+      document.getElementById('txt-leverage-item').textContent = typeof lev === 'string' ? lev : '掌握私密把柄痕迹';
+    } else {
+      document.getElementById('box-heroine-section').style.display = 'none';
+    }
+
+    syncHeight();
+  }
+
+  render();
+  [100, 400, 1000, 2500].forEach(function(t) { setTimeout(syncHeight, t); });
+  if (window.ResizeObserver) {
+    try { new ResizeObserver(syncHeight).observe(document.body); } catch (_) {}
+  }
+})();
+</script>
+</body>
+</html>
