@@ -1,65 +1,74 @@
 /* ═══════════════════════════════════════════════════════════
-   神奇手机 · 2026 OLED Cyber-Luxe 视觉系统
+   神奇手机 · 正文美化视觉系统 —— ★ 与小手机（面板）一致
    ═══════════════════════════════════════════════════════════
-   极深黑曜石底色 + 拟真玻璃态模糊 + 细致微光描边 + 赛博霓虹语义色
+   ★★★ 用户要求：「正文美化跟小手机保持一致」
+   ★ 所以下面这套变量【逐条对应】面板 global.css 的 ios-dark 主题：
+     --dsh-bg        →  --bg-0
+     --dsh-card      →  --bg-2
+     --dsh-glass     →  玻璃层
+     --dsh-blur/sat  →  --blur / --sat
+     --dsh-line-a    →  --line
+     --dsh-radius    →  --r-lg
+   ★★ 两边同源，改一边记得改另一边。
    ═══════════════════════════════════════════════════════════ */
 
 :root {
-  /* ═══ 底色层：OLED 极深黑曜石 ═══ */
-  --bg-0: #07070a;
-  --bg-1: #0d0d14;
-  --bg-2: #14131f;
-  --bg-3: #1c1a2b;
-  --line: rgba(255, 255, 255, 0.08);
-  --line-strong: rgba(255, 255, 255, 0.15);
+  /* ═══ 底色层：跟小手机 ios-dark 一致 ═══ */
+  --bg-0: #0e0e1a;
+  --bg-1: #14142a;
+  --bg-2: #16162a;
+  --bg-3: #1c1c33;
+  --line: rgba(255, 255, 255, 0.09);
+  --line-strong: rgba(255, 255, 255, 0.16);
 
-  /* ═══ 文字层：高清对比 ═══ */
+  /* ═══ 玻璃层（iOS 26）═══ */
+  --glass: rgba(255, 255, 255, 0.06);
+  --glass-hi: rgba(255, 255, 255, 0.10);
+  --glass-card: rgba(22, 22, 42, 0.62);
+  --blur: 24px;
+  --sat: 180%;
+
+  /* ═══ 文字层 ═══ */
   --t-1: #ffffff;
-  --t-2: #d1ccd9;
-  --t-3: #8e889e;
-  --t-4: #5a5468;
+  --t-2: #d8d8e8;
+  --t-3: #9a94ac;
+  --t-4: #6a6478;
 
-  /* ═══ 语义色：赛博微光霓虹 ═══ */
-  --c-hot:    #f43f5e;   /* 情欲 / 高潮 / 绝顶 */
+  /* ═══ 语义色（跟小手机的色板对齐）═══ */
+  --c-hot:    #f43f5e;
   --c-hot-2:  #fda4af;
-  --c-good:   #10b981;   /* 成功 / 验证 / 上涨 */
-  --c-bad:    #ef4444;   /* 危险 / 失败 / 掉级 */
-  --c-warn:   #f59e0b;   /* 警告 / 骗局 / 疑点 */
-  --c-info:   #3b82f6;   /* 系统 / 信息 / 链路 */
-  --c-money:  #fbbf24;   /* 任务点 / 金钱 */
-  --c-exp:    #8b5cf6;   /* 手机经验 / 算力 */
-  --c-time:   #06b6d4;   /* 时间戳 / 距离 */
+  --c-good:   #34c759;
+  --c-bad:    #ff3b30;
+  --c-warn:   #ff9f0a;
+  --c-info:   #0a84ff;
+  --c-money:  #ffd60a;
+  --c-exp:    #8b5cf6;
+  --c-time:   #64d2ff;
 
-  /* ═══ 玻璃态 ═══ */
-  --glass: rgba(22, 20, 32, 0.78);
-  --glass-card: rgba(18, 16, 26, 0.88);
-  --blur: blur(20px);
-
-  /* ═══ 圆角 ═══ */
-  --r-sm: 8px;
-  --r-md: 14px;
-  --r-lg: 20px;
+  /* ═══ 圆角（小手机是 22）═══ */
+  --r-sm: 10px;
+  --r-md: 16px;
+  --r-lg: 22px;
   --r-pill: 9999px;
 
-  /* ═══ 阴影与微光 ═══ */
-  --sh-sm: 0 4px 12px rgba(0, 0, 0, 0.4);
-  --sh-lg: 0 16px 40px -8px rgba(0, 0, 0, 0.8), 0 0 1px 1px rgba(255, 255, 255, 0.06);
+  /* ═══ 阴影 + 内发光（玻璃感的关键）═══ */
+  --sh-sm: 0 2px 10px rgba(0, 0, 0, 0.28);
+  --sh-lg:
+    0 16px 40px -12px rgba(0, 0, 0, 0.72),
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
 
-  /* ═══ 色相与强调 ═══ */
   --hue: 265;
   --accent: hsl(var(--hue), 85%, 68%);
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
 html, body {
+  /* ★ 跟小手机一样：透明底，让酒馆楼层背景透出来 */
   background: transparent !important;
   color: var(--t-2);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
   font-size: 13px;
   line-height: 1.7;
   -webkit-font-smoothing: antialiased;
@@ -67,40 +76,43 @@ html, body {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   主卡片容器 (Glassmorphism OLED Card)
+   主卡片 —— iOS 26 磨砂玻璃（★ 跟小手机的 .dsh-glass 同款）
    ═══════════════════════════════════════════════════════════ */
 .dsh-card {
   position: relative;
   max-width: 440px;
   margin: 12px auto;
   border-radius: var(--r-lg);
+  /* ★ 半透明 + 饱和度提升 = 磨砂玻璃 */
   background: var(--glass-card);
-  backdrop-filter: var(--blur);
-  -webkit-backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(var(--sat));
+  backdrop-filter: blur(var(--blur)) saturate(var(--sat));
   border: 1px solid var(--line);
   box-shadow: var(--sh-lg);
   overflow: hidden;
   isolation: isolate;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
 }
 
-/* 顶部流光细线 */
+/* ★ 顶部流光细线（跟小手机一致）*/
 .dsh-card::before {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 1px;
   background: linear-gradient(90deg, transparent 0%, var(--accent) 50%, transparent 100%);
-  opacity: 0.65;
+  opacity: 0.55;
 }
 
-/* 头部 Header */
 .dsh-hd {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 11px 16px;
-  background: rgba(255, 255, 255, 0.03);
+  padding: 12px 16px;
+  /* ★ 玻璃头：用白色低透明，不用深色 */
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(var(--sat));
+  backdrop-filter: blur(var(--blur)) saturate(var(--sat));
   border-bottom: 1px solid var(--line);
 }
 
@@ -108,11 +120,11 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border-radius: var(--r-sm);
-  background: rgba(139, 92, 246, 0.16);
-  border: 1px solid rgba(139, 92, 246, 0.3);
+  background: var(--glass-hi);
+  border: 1px solid var(--line);
   font-size: 13px;
 }
 
@@ -125,21 +137,15 @@ html, body {
 }
 
 .dsh-hd-sub {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
   font-size: 11px;
   color: var(--t-3);
 }
 
-/* 内容区 */
-.dsh-bd {
-  padding: 14px 16px;
-}
+.dsh-bd { padding: 14px 16px; }
+.dsh-bd.p0 { padding: 0; }
 
-.dsh-bd.p0 {
-  padding: 0;
-}
-
-/* ═══ 现代晶体标签 (Pill Badges) ═══ */
+/* ═══ 晶体标签 ═══ */
 .dsh-tag {
   display: inline-flex;
   align-items: center;
@@ -149,54 +155,24 @@ html, body {
   font-size: 11px;
   font-weight: 500;
   line-height: 1.4;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--glass);
   border: 1px solid var(--line);
   color: var(--t-2);
 }
 
-.dsh-tag.hot {
-  background: rgba(244, 63, 94, 0.15);
-  border-color: rgba(244, 63, 94, 0.35);
-  color: var(--c-hot-2);
-}
+.dsh-tag.hot   { background: rgba(244, 63, 94, 0.15);  border-color: rgba(244, 63, 94, 0.35);  color: var(--c-hot-2); }
+.dsh-tag.good  { background: rgba(52, 199, 89, 0.15);  border-color: rgba(52, 199, 89, 0.35);  color: #7ee8a0; }
+.dsh-tag.warn  { background: rgba(255, 159, 10, 0.15); border-color: rgba(255, 159, 10, 0.35); color: #ffd08a; }
+.dsh-tag.bad   { background: rgba(255, 59, 48, 0.15);  border-color: rgba(255, 59, 48, 0.35);  color: #ff9d97; }
+.dsh-tag.info  { background: rgba(10, 132, 255, 0.15); border-color: rgba(10, 132, 255, 0.35); color: #8ec5ff; }
+.dsh-tag.money { background: rgba(255, 214, 10, 0.15); border-color: rgba(255, 214, 10, 0.35); color: #ffe766; }
 
-.dsh-tag.good {
-  background: rgba(16, 185, 129, 0.15);
-  border-color: rgba(16, 185, 129, 0.35);
-  color: #6ee7b7;
-}
-
-.dsh-tag.warn {
-  background: rgba(245, 158, 11, 0.15);
-  border-color: rgba(245, 158, 11, 0.35);
-  color: #fde68a;
-}
-
-.dsh-tag.bad {
-  background: rgba(239, 68, 68, 0.15);
-  border-color: rgba(239, 68, 68, 0.35);
-  color: #fca5a5;
-}
-
-.dsh-tag.info {
-  background: rgba(59, 130, 246, 0.15);
-  border-color: rgba(59, 130, 246, 0.35);
-  color: #93c5fd;
-}
-
-.dsh-tag.money {
-  background: rgba(251, 191, 36, 0.15);
-  border-color: rgba(251, 191, 36, 0.35);
-  color: #fde047;
-}
-
-/* 高亮信息行 */
 .dsh-key {
   position: relative;
   margin: 8px 0;
-  padding: 8px 12px;
+  padding: 9px 12px;
   border-radius: var(--r-sm);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--glass);
   border-left: 2px solid var(--accent);
   color: var(--t-1);
   font-size: 12.5px;
@@ -208,7 +184,36 @@ html, body {
 }
 
 .dsh-mono {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
   font-size: 11px;
   color: var(--t-3);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ★ 滚动条（跟小手机一致）
+   ═══════════════════════════════════════════════════════════ */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* ═══════════════════════════════════════════════════════════
+   ★ 兼容：老页面用的别名变量（★ 30 个页里可能残留）
+   ═══════════════════════════════════════════════════════════ */
+:root {
+  --dsh-bg: var(--bg-0);
+  --dsh-bg2: var(--bg-1);
+  --dsh-card: var(--bg-2);
+  --dsh-card2: var(--bg-3);
+  --dsh-card-a: var(--glass);
+  --dsh-glass: var(--glass);
+  --dsh-glass-hi: var(--glass-hi);
+  --dsh-line: var(--line);
+  --dsh-line-a: var(--line);
+  --dsh-text: var(--t-2);
+  --dsh-text-hi: var(--t-1);
+  --dsh-dim: var(--t-3);
+  --dsh-blue: var(--c-info);
+  --dsh-blur: var(--blur);
+  --dsh-sat: var(--sat);
+  --dsh-radius: var(--r-lg);
 }
